@@ -3,9 +3,9 @@
 #                                 error data
 
 # Get helper functions
-source('./Documents/GitHub/social_ERN_2018/R_Functions/getPacks.R')
-source('./Documents/GitHub/social_ERN_2018/R_Functions/stdResid.R')
-source('./Documents/GitHub/social_ERN_2018/R_Functions/overDisp.R')
+source('./Documents/GitHub/Supplementary_Soc_ERN/R_Functions/getPacks.R')
+source('./Documents/GitHub/Supplementary_Soc_ERN/R_Functions/stdResid.R')
+source('./Documents/GitHub/Supplementary_Soc_ERN/R_Functions/overDisp.R')
 
 # Install and load multiple R packages necessary for analysis.
 pkgs <- c('dplyr', 
