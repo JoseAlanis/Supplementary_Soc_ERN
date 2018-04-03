@@ -294,7 +294,7 @@ ag <- Effect(mod = mod_err_in_1,
 err_flank <- ggplot(data = as.data.frame(est_err$emmeans), 
                     aes(x = Flankers, y = rate, fill = Flankers)) + 
   
-  geom_bar(size = .5, width = .7, color=NA,
+  geom_bar(size = .5, width = .7, color = NA,
            position = position_dodge(0.5), 
            stat = 'identity') +
   geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL), 
