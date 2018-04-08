@@ -21,7 +21,6 @@ load('./Desktop/RefTask_2018_Final/for_upload/DATA/Errors_Data.RData')
 
 
 # ------ 1) PLOT number of errors by flankers ----------------------
-pdf('./Desktop/number_of_errors.pdf', height = 3.5, width = 6)
 
 ggplot(Errors, aes(N_Errors, fill = Flankers)) +
   geom_histogram(color = 'black', bins = 9) + 
@@ -42,9 +41,6 @@ ggplot(Errors, aes(N_Errors, fill = Flankers)) +
                                  color = 'black'),
         legend.position = 'none') + 
   geom_rug()
-
-dev.off()
-
 
 
 # ------ 2) COMPUTE and descriptive statistics  --------------------
