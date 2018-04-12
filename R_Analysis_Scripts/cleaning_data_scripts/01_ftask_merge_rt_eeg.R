@@ -1,5 +1,5 @@
 ##### ##### #####     Analysis scrips for Alanis et al., 2018   ##### ##### #####
-#                         Merge behaviorala and eeg data
+#                         Merge behavioural and eeg data
 #
 
 
