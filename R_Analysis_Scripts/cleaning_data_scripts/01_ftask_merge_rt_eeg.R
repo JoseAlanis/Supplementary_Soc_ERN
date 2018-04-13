@@ -5,11 +5,10 @@
 
 # Load necessary packages
 require(dplyr)
-se <- function(x) sqrt(var(x)/length(x))
+#se <- function(x) sqrt(var(x)/length(x)) # uncomment if required
 
 # ----- 1) READ in behavioural data ---------------------------------
 load('~/Documents/Experiments/soc_ftask/data_for_r/all_behav.RData')
-unique(all_behav$ID)
 
 # Only keep relevent trials
 # i.e, trials where subject perfomed a response
@@ -95,11 +94,13 @@ for (i in 1:76) {
                    dplyr::lag(temp$Reaction) == 'correct')
   
   # --- Create PES data.frame ---
-  PES <- dplyr::filter(temp, Trial_Nr %in% temp[Index, 'Trial_Nr'])
-  PES <- rbind(PES, dplyr::filter(temp, Trial_Nr %in% (temp[Index, 'Trial_Nr']-1) ) )
+  PES <- filter(temp, Trial_Nr %in% temp[Index, 'Trial_Nr'])
+  PES <- rbind(PES, filter(temp, Trial_Nr %in% 
+                           (temp[Index, 'Trial_Nr']-1) ) )
   PES <- select(PES, ID:Trial, Fz, FCz, Cz, CPz, Pz, Time)
   
-  PES <- mutate(PES, Trial_Index = ifelse(Trial_Nr %in% temp[Index, 'Trial_Nr'], 'N+1', 'Error'))
+  PES <- mutate(PES, Trial_Index = ifelse(Trial_Nr %in% 
+                                          temp[Index, 'Trial_Nr'], 'N+1', 'Error'))
   
   # --- Transform data frame and filter relevant obs. ---
   PES <- filter(PES, Time >= 0 & Time <= 100)
@@ -128,10 +129,10 @@ for (i in 1:76) {
   
   
   # ******    SAME FOR POST-CORRECT TRIALS    *****
-  PCT <- dplyr::filter(temp, Trial_Nr %in% temp[Index_2, 'Trial_Nr'])
+  PCT <- filter(temp, Trial_Nr %in% temp[Index_2, 'Trial_Nr'])
   PCT <- filter(PCT, Time >= 0 & Time <= 100)
   PCT <- select(PCT, ID:Trial, Fz, FCz, Cz, CPz, Pz, Time)
-  PCT <- tidyr::gather(PCT, Electrode, Amplitude, Fz:Pz, 
+  PCT <- gather(PCT, Electrode, Amplitude, Fz:Pz, 
                        factor_key = TRUE)
   PCT <- filter(PCT, Electrode == 'FCz' | Electrode == 'Cz')
   PCT$Electrode <- factor(PCT$Electrode)
