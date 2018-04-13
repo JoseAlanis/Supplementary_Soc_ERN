@@ -82,7 +82,6 @@ for (i in 1:76) {
   
   
   # ------ ***** 3) Create PES data set for analysis ***** ----------
-  
   # --- Indetify correct trials preceded by an error
   # --- (this is to control for post error processes 
   # --- in correct trials, e.g., post erros slowing)
@@ -160,7 +159,6 @@ for (i in 1:76) {
   
   
   # ------ ***** 4) Create trial amplitude averages ***** ----------
-  
   # --- Remove trials distored by EEG artifacts
   temp <- temp[!temp$Trial_Nr %in% x , ]
   # --- REMOVE post error trials
@@ -232,7 +230,6 @@ for (i in 1:76) {
   
   # ------ ***** 5) Function run-time ***** -------------------------
   time.taken <- Sys.time() - start.time
-  
   
   
   # ------ ***** 6) Print summary  ***** ----------------------------
