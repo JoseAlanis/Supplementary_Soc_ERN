@@ -11,18 +11,19 @@ source('./Documents/GitHub/Supplementary_Soc_ERN/R_Functions/stdResid.R')
 pkgs <- c('dplyr', 
           'lme4', 'lmerTest', 'sjstats',
           'effects', 'emmeans', 'car', 'MuMIn',
-          'ggplot2', 'cowplot', 'viridis')
+          'ggplot2', 'viridis')
 
 getPacks(pkgs)
 rm(pkgs)
 
 
 # ------ READ in the data  --------------------------------------
-load('./Desktop/RefTask_2018_Final/for_upload/DATA/Corrects_Data.RData')
+load('~/Documents/Experiments/soc_ftask/data_for_r/Corrects_Data.RData')
 
 
 # ------ 1) PLOT RT by flankers ---------------------------------
 
+# ------ Distribution ------
 ggplot(Corrects, aes(M_RT, fill = Flankers)) +
   geom_histogram(color = 'black', bins = 15) + 
   facet_wrap(~ Flankers) +
@@ -42,6 +43,52 @@ ggplot(Corrects, aes(M_RT, fill = Flankers)) +
                                  color = 'black'),
         legend.position = 'none') + 
   geom_rug()
+
+
+# ----- BOX-PLOT for Manuscript ------
+corr_box <-  ggplot(Corrects, 
+                   aes(x = Flankers, y = M_RT, color = Flankers)) +
+  
+  geom_jitter(width = 0.35, 
+              alpha = 0.7,
+              size = 0.7) +
+  
+  geom_boxplot(width = 0.25, size = 0.8,
+               fill = NA, 
+               outlier.colour = NA, 
+               color='black') +
+  
+  labs(x = 'Trial Type', 
+       y = expression(bold('Mean RT ' ['ms']))) + 
+  
+  theme_classic() +
+
+  scale_y_continuous(breaks = c(100, 200, 300, 400, 500)) +
+  
+  geom_segment(aes(x = -Inf, y = 100, xend = -Inf, yend = 500), 
+               color='black', size = rel(1), linetype = 1) +
+  geom_segment(aes(x = 'Compatible', y = -Inf, xend = 'Neutral', yend = -Inf), 
+               color = 'black', size = rel(1), linetype = 1) +
+  
+  scale_color_viridis(option = 'B', discrete = T, end = .9) + 
+  
+  theme(strip.background = element_blank(),
+        axis.line = element_blank(),
+        axis.title.x = element_text(size = 14, 
+                                    color = 'black',
+                                    face = 'bold', margin = margin(t = 15)),
+        axis.title.y = element_text(size = 14, 
+                                    color = 'black', 
+                                    face = 'bold',  margin = margin(r = 15)),
+        axis.text.x = element_text(size = 13, 
+                                   color = 'black', angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 13, 
+                                   color = 'black'),
+        legend.position = 'none'); corr_box
+
+# SAVE PLOT
+save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4a.pdf', 
+          corr_box, base_height = 6, base_width = 4)
 
 # ------ 2) EFFECT CODE and center predictors -------------------
 # Effect code
@@ -204,70 +251,68 @@ rt_int <- Effect(mod = mod_corrects_1,
 
 # ------ 7) Create FIGURES ------------------------------------------
 
-# Effect of trial type
-rt_means <- ggplot(data = as.data.frame(rt_flank$emmeans), 
-                   aes(x = Flankers, y = emmean, fill = Flankers)) + 
+# ----- Plot trial type estimates -----
+# PLOT log-estimates
+corr_p <- ggplot(data = as.data.frame(rt_flank$emmeans), 
+                aes(y = emmean, x = Flankers)) + 
   
-  geom_bar(size = .5, width = .7, color=NA, 
-           position = position_dodge(0.5), stat = 'identity') +
-  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
-                width = 0.25, color = 'black', size = 0.8, 
-                position = position_dodge(0.5)) + 
-  geom_linerange(aes(ymin = emmean-SE, ymax = emmean+SE), 
-                 size = 2, position = position_dodge(0.5), color = 'black') +
+  geom_hline(yintercept = mean(as.data.frame(rt_flank$emmeans)[, 2]), 
+             linetype = 2) +
+  
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL, color = Flankers), 
+                width = 0.2, size = 1, alpha = 0.7) + 
+  geom_linerange(aes(ymin = emmean-SE, ymax = emmean+SE), color = 'gray',
+                 size = 3) + 
+  geom_point(shape = 18, size = 3.5, color = 'black') +
+  labs(y = expression(bold('Estimated Mean RT ' ['ms'])), x = 'Trial Type') +
   
   theme_classic() + 
-  scale_fill_viridis(option = 'B', begin = .30, end = .95,
-                     discrete = T) +
   
   scale_y_continuous(breaks = c(250, 300, 350)) +
-  geom_segment(aes(x = -Inf, y = 246.5, xend = Inf, yend = 246.5), 
-               color = 'white', 
-               size = rel(7)) +
+  
+  scale_color_viridis(option = 'B', discrete = T, end = .90) +
+  
   geom_segment(aes(x = -Inf, y = 250, xend = -Inf, yend = 350), 
-               color = 'black', 
-               size = rel(1)) +
-  geom_segment(aes(x = 'Neutral', y = -Inf, xend = 'Compatible', yend = -Inf), 
-               color = 'black', 
-               size = rel(1)) +
+               color='black', size = rel(1), linetype = 1) +
+  geom_segment(aes(x = 'Compatible', y = -Inf, xend = 'Neutral', yend = -Inf), 
+               color = 'black', size = rel(1), linetype = 1) +
   
-  labs(x ='Trial Type', 
-       y = expression(bold('RT ' ['ms']))) +
-  
-  theme(axis.line = element_blank(),
-        axis.ticks = element_line(size = rel(1.1)),
-        axis.ticks.length = unit(.1, 'cm'),
-        axis.title.y = element_blank(),
-        axis.title.x = element_text(size = 12, 
-                                    face = 'bold', 
-                                    margin = margin(t = 10)),
-        axis.text.y = element_text(size = 11, color = 'black'),
-        axis.text.x =  element_text(size = 11, color = 'black'),
-        legend.title = element_blank(),
-        legend.text = element_text(size = 11, color = 'black'),
-        plot.margin=unit(c(.8,.5,.5,.5),"cm"),
-        legend.position = 'none') + 
-  
-  coord_flip(ylim = c(250, 350)); print(rt_means)
+  theme(strip.background = element_blank(),
+        axis.line = element_blank(),
+        axis.title.x = element_text(size = 14, 
+                                    color = 'black',
+                                    face = 'bold', margin = margin(t = 15)),
+        axis.title.y = element_text(size = 14, 
+                                    color = 'black', 
+                                    face = 'bold',  margin = margin(r = 15)),
+        axis.text.x = element_text(size = 13, 
+                                   color = 'black', angle = 90, vjust = .5, hjust = 1),
+        axis.text.y = element_text(size = 13, 
+                                   color = 'black'),
+        legend.position = 'none'); corr_p
+
+# SAVE PLOT
+save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4b.pdf', 
+          corr_p, base_height = 6, base_width = 2.5)
 
 
 # Effect of Number of Errors 
 err_eff <- ggplot(as.data.frame(rt_err), 
                   aes(Tot_Errors, fit)) +
   
-  annotate("text", x = -11, y = 450,
-           label = "paste(italic(ß), \" = -1.4***\")", parse = TRUE, size = 3) +
+  annotate("text", x = -10, y = 450,
+           label = "paste(italic(ß), \" = -1.4***\")", parse = TRUE, size = 5) +
   
   geom_point(data = c_rm, aes(x = Tot_Errors, y = M_RT, colour=Flankers), 
-             size = .9, alpha = .7) +
+             size = 1, alpha = .7) +
   geom_ribbon(aes(ymin = lower, ymax = upper), 
               fill='gray', color = NA, alpha = .5) + 
-  geom_line(color='black', size = .8) +
+  geom_line(color='black', size = 1) +
   
   coord_cartesian(ylim = c(150, 450), xlim = c(-25, 50))  +
 
   theme_classic() +
-  scale_color_viridis(option = 'B', begin = .30, end = .95,
+  scale_color_viridis(option = 'B', end = .90,
                      discrete = T) +
 
   scale_x_continuous(breaks = c(-25, 0, 25, 50)) +
@@ -279,19 +324,22 @@ err_eff <- ggplot(as.data.frame(rt_err),
                color='black', size=rel(1)) +
   
   labs(x = expression(bold('N Errors ' ['centred'])), 
-       y = expression(bold('RT ' ['ms']))) +
+       y = expression(bold('Mean RT ' ['ms']))) +
   
   theme(axis.line = element_blank(),
         axis.ticks = element_line(size = rel(1.1)),
         axis.ticks.length = unit(.1, 'cm'),
-        axis.text.x = element_text(size = 11, color = 'black'),
-        axis.text.y = element_text(size = 11, color = 'black'),
-        axis.title.x = element_text(size = 12, face = 'bold', 
-                                    margin = margin(t = 10)),
-        axis.title.y = element_text(size = 12, face = 'bold', 
-                                    margin = margin(r = 10)),
-        plot.margin=unit(c(.8,.5,.5,.5),"cm"),
-        legend.position = 'none'); print(err_eff)
+        axis.text.x = element_text(size = 13, color = 'black'),
+        axis.text.y = element_text(size = 13, color = 'black'),
+        axis.title.x = element_text(size = 14, face = 'bold', 
+                                    margin = margin(t = 15)),
+        axis.title.y = element_text(size = 14, face = 'bold', 
+                                    margin = margin(r = 15)),
+        legend.position = 'none'); err_eff
+
+# SAVE PLOT
+save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_5a.pdf', 
+          err_eff, base_height = 4, base_width = 3.5)
 
 
 # Effect of Interest
@@ -299,18 +347,18 @@ int_eff <- ggplot(as.data.frame(rt_int),
                   aes(Interest, fit)) +
   
   annotate("text", x = -7, y = 450,
-           label = "paste(italic(ß), \" = 2.1*\")", parse = TRUE, size = 3) +
+           label = "paste(italic(ß), \" = 2.1*\")", parse = TRUE, size = 5) +
   
   geom_point(data = c_rm, aes(x = Interest, y = M_RT, colour = Flankers), 
-             size = .9, alpha = .7) +
+             size = 1, alpha = .7) +
   geom_ribbon(aes(ymin = lower, ymax = upper), 
               fill='gray', color = NA, alpha = .5) + 
-  geom_line(color='black', size = .8) +
+  geom_line(color='black', size = 1) +
   
   coord_cartesian(ylim = c(150, 450), xlim = c(-10, 10))  +
 
   theme_classic() +
-  scale_color_viridis(option = 'B', begin = .30, end = .95,
+  scale_color_viridis(option = 'B', end = .90,
                      discrete = T) +
 
   scale_x_continuous(breaks = c(-10, -5, 0, 5, 10)) +
@@ -321,34 +369,22 @@ int_eff <- ggplot(as.data.frame(rt_int),
   geom_segment(aes(x = -10, y = -Inf, xend = 10, yend = -Inf),
                color='black', size=rel(1)) +
   
-  labs(x = expression(bold('Interest ' ['centred'])), 
-       y = expression(bold('RT ' ['ms']))) +
+  labs(x = expression(bold(paste(Delta,'Motivation ' ['centred']))), 
+       y = expression(bold('Mean RT ' ['ms']))) +
   
   theme(axis.line = element_blank(),
         axis.ticks = element_line(size = rel(1.1)),
         axis.ticks.length = unit(.1, 'cm'),
-        axis.text.x = element_text(size = 11, color = 'black'),
-        axis.text.y = element_text(size = 11, color = 'black'),
-        axis.title.x = element_text(size = 12, face = 'bold', 
-                                    margin = margin(t = 10)),
-        axis.title.y = element_text(size = 12, face = 'bold', 
-                                    margin = margin(r = 10)),
-        plot.margin=unit(c(.8,.5,.5,.5),"cm"),
-        legend.position = 'none'); print(int_eff)
+        axis.text.x = element_text(size = 13, color = 'black'),
+        axis.text.y = element_text(size = 13, color = 'black'),
+        axis.title.x = element_text(size = 14, face = 'bold', 
+                                    margin = margin(t = 15)),
+        axis.title.y = element_text(size = 14, face = 'bold', 
+                                    margin = margin(r = 15)),
+        legend.position = 'none'); int_eff
 
 
-# ------ 9) SAVE FIGURES as PDF -------------------------------------
-# Upper panel
-first_row <- plot_grid(rt_means, nrow = 1, labels = c('a)'), 
-                       vjust = 1, hjust = -.5)
-# Lower panes
-second_row = plot_grid(err_eff, int_eff, nrow = 1, labels = c('b)', 'c)'), 
-                       vjust = 1, hjust = -.5)
-# Full figure
-figure_rt <- plot_grid(first_row, second_row, ncol = 1)
-# Save figure
-save_plot('./Desktop/Figure_RT.pdf', 
-          figure_rt, base_height = 5.5, base_width = 5.5)
-
-
+# SAVE PLOT
+save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_5b.pdf', 
+          int_eff, base_height = 4, base_width = 3.5)
 
