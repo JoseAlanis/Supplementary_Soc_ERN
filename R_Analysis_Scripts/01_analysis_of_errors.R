@@ -11,17 +11,18 @@ source('./Documents/GitHub/Supplementary_Soc_ERN/R_Functions/overDisp.R')
 pkgs <- c('dplyr', 
           'lme4', 'lmerTest',
           'effects', 'emmeans', 'car', 'MuMIn',
-          'ggplot2', 'cowplot', 'viridis')
+          'ggplot2', 'viridis')
 
 getPacks(pkgs)
 rm(pkgs)
 
 # ------ READ in the data  --------------------------------------
-load('./Desktop/RefTask_2018_Final/for_upload/DATA/Errors_Data.RData')
+load('~/Documents/Experiments/soc_ftask/data_for_r/Errors_Data.RData')
 
 
-# ------ 1) PLOT number of errors by flankers ----------------------
+# ------ 1) Create PLOTs with descriptive data ------------------
 
+# ------ Distribution ------
 ggplot(Errors, aes(N_Errors, fill = Flankers)) +
   geom_histogram(color = 'black', bins = 9) + 
   facet_wrap(~ Flankers, scales = 'free_x') +
@@ -43,6 +44,46 @@ ggplot(Errors, aes(N_Errors, fill = Flankers)) +
   geom_rug()
 
 
+# ----- BOX-PLOT for Manuscript ------
+err_box <-  ggplot(Errors, 
+                   aes(x = Flankers, y = N_Errors, color = Flankers)) +
+  geom_jitter(width = 0.35, 
+              alpha = 0.7,
+              size = 0.7) +
+  geom_boxplot(width = 0.25, size = 0.8,
+               fill = NA, 
+               outlier.colour = NA, 
+               color='black') +
+  labs(x = 'Trial Type', 
+       y = 'Number of Errors') + 
+  theme_classic() +
+  
+  geom_segment(aes(x = -Inf, y = 0, xend = -Inf, yend = 50), 
+               color='black', size = rel(1), linetype = 1) +
+  geom_segment(aes(x = 'Compatible', y = -Inf, xend = 'Neutral', yend = -Inf), 
+               color = 'black', size = rel(1), linetype = 1) +
+  
+  scale_color_viridis(option = 'B', discrete = T, end = .9) + 
+  
+  theme(strip.background = element_blank(),
+        axis.line = element_blank(),
+        axis.title.x = element_text(size = 14, 
+                                    color = 'black',
+                                    face = 'bold', margin = margin(t = 15)),
+        axis.title.y = element_text(size = 14, 
+                                    color = 'black', 
+                                    face = 'bold',  margin = margin(r = 15)),
+        axis.text.x = element_text(size = 13, 
+                                   color = 'black', angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.y = element_text(size = 13, 
+                                   color = 'black'),
+        legend.position = 'none'); err_box 
+
+# SAVE PLOT
+save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2a.pdf', 
+          err_box, base_height = 6, base_width = 4)
+
+
 # ------ 2) COMPUTE and descriptive statistics  --------------------
 
 # Errors overall
@@ -57,10 +98,10 @@ Errors %>% group_by(Group) %>%
             SE = sd(Total_Errors) / sqrt(sum(!is.na(Total_Errors))))
 
 # Errors by flankers
-Errors %>% group_by(Flankers) %>% 
-  summarise(M = mean(N_Errors), 
-            SD = sd(N_Errors), 
-            SE = sd(N_Errors) / sqrt(sum(!is.na(N_Errors))))
+as.data.frame(Errors %>% group_by(Flankers) %>% 
+                summarise(M = mean(N_Errors), 
+                          SD = sd(N_Errors), 
+                          SE = sd(N_Errors) / sqrt(sum(!is.na(N_Errors)))))
 
 # PLOT distribution
 hist(Errors$Total_Errors)
@@ -179,19 +220,44 @@ mutate(as.data.frame(est_group$contrasts),
 
 
 # ------ 6) Plot log estimates for trial type ----------------------
-ggplot(data = as.data.frame(emmeans(mod_errors_1, ~ Flankers)), 
-       aes(y = emmean, x = Flankers)) + 
-  geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL), 
-                width = 0.2, color = 'black', size = 0.8) + 
-  geom_linerange(aes(ymin = emmean-SE, ymax = emmean+SE, color = Flankers), 
-                 size = 3) + 
-  geom_point(shape = 18, size = 3, color = 'black') +
-  labs(y = expression( 'estimated incidence ' ['log scaled'])) +
-  theme(axis.title.y = element_blank(),
-        axis.text = element_text(color = 'black', size = 13),
-        legend.position = 'none') +
-  coord_flip(ylim = c(- 0.15, 3))
 
+# PLOT log-estimates
+err_p <- ggplot(data = as.data.frame(emmeans(mod_errors_1, ~ Flankers)), 
+       aes(y = emmean, x = Flankers)) + 
+  
+  geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL, color = Flankers), 
+                width = 0.2, size = 1, alpha=0.7) + 
+  geom_linerange(aes(ymin = emmean-SE, ymax = emmean+SE), color = 'gray',
+                 size = 3) + 
+  geom_point(shape = 18, size = 3.5, color = 'black') +
+  labs(y = expression(bold('estimated incidence ' ['log scaled'])), x = 'Trial Type') +
+
+  theme_classic() + 
+  
+  scale_color_viridis(option = 'B', discrete = T, end = .90) +
+  
+  geom_segment(aes(x = -Inf, y = 0, xend = -Inf, yend = 3), 
+               color='black', size = rel(1), linetype = 1) +
+  geom_segment(aes(x = 'Compatible', y = -Inf, xend = 'Neutral', yend = -Inf), 
+               color = 'black', size = rel(1), linetype = 1) +
+  
+  theme(strip.background = element_blank(),
+        axis.line = element_blank(),
+        axis.title.x = element_text(size = 14, 
+                                    color = 'black',
+                                    face = 'bold', margin = margin(t = 15)),
+        axis.title.y = element_text(size = 14, 
+                                    color = 'black', 
+                                    face = 'bold',  margin = margin(r = 15)),
+        axis.text.x = element_text(size = 13, 
+                                   color = 'black', angle = 90, vjust = .5, hjust = 1),
+        axis.text.y = element_text(size = 13, 
+                                   color = 'black'),
+        legend.position = 'none'); err_p
+
+# SAVE PLOT
+save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2b.pdf', 
+          err_p, base_height = 6, base_width = 2.5)
 
 
 # ------ 7) FOLLOW-UP analyses - Incompatible trials ---------------
@@ -220,7 +286,8 @@ car::Anova(mod_full_err_in, type='III')
 mod_err_in <- glmer(data = Errors_In, 
                         N_Errors ~ Group + Affiliation + Agency + (1|ID), 
                     family = poisson(link = 'log'), 
-                    control = glmerControl(optimizer="bobyqa"), nAGQ = 20)
+                    control = glmerControl(optimizer = "bobyqa"), 
+                    nAGQ = 20)
 Anova(mod_err_in, type='III')
 qqPlot(resid(mod_err_in))
 
@@ -236,7 +303,8 @@ In_rm <- stdResid(data = Errors_In, mod_err_in,
 mod_err_in_1 <- glmer(data = filter(In_rm, Outlier == 0), 
                       N_Errors ~ Group + Affiliation + Agency + (1|ID), 
                       family = poisson(link = 'log'), 
-                      control = glmerControl(optimizer="bobyqa"), nAGQ = 20)
+                      control = glmerControl(optimizer = "bobyqa"), 
+                      nAGQ = 20)
 Anova(mod_err_in_1, type='III')
 summary(mod_err_in_1)
 qqPlot(resid(mod_err_in_1))
@@ -252,8 +320,6 @@ r.squaredGLMM(update(mod_err_in_1, nAGQ = 1)) # fit model by Laplace approximati
 
 # Check overdisperion
 overDisp(mod_err_in_1)
-sjPlot::sjp.glmer(mod_err_in_1, type = 'pred', vars = 'Affiliation', show.ci = T)
-sjPlot::sjp.glmer(mod_err_in_1, type = 'pred', vars = 'Agency', show.ci = T)
 
 # Save Simple slopes of Affiliation
 emm_trend_SC <- emtrends(mod_err_in_1, 
@@ -277,71 +343,28 @@ summary(emm_trend_MAE, infer=T)
 af <- Effect(mod = mod_err_in_1, 
              c("Affiliation"), 
              xlevels = list(Affiliation = 20),  
-             partial.residuals=T) 
+             partial.residuals = T) 
 
 ag <- Effect(mod = mod_err_in_1, 
              c("Agency"), 
              xlevels = list(Agency = 20),  
-             partial.residuals=T) 
+             partial.residuals = T) 
 
 
-# ------ 8) CREATE FIGURES -----------------------------------------
-# NUMBER OF ERRORS by Trial Type
-err_flank <- ggplot(data = as.data.frame(est_err$emmeans), 
-                    aes(x = Flankers, y = rate, fill = Flankers)) + 
-  
-  geom_bar(size = .5, width = .7, color = NA,
-           position = position_dodge(0.5), 
-           stat = 'identity') +
-  geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL), 
-                width = 0.25, color = 'black', size = 0.8, 
-                position = position_dodge(0.5)) + 
-  geom_linerange(aes(ymin = rate-SE, ymax = rate+SE), 
-                 size = 2, color = 'black',
-                 position = position_dodge(0.5)) +
-  
-  theme_classic() +
-  scale_fill_viridis(option = 'B', begin = .30, end = .95,
-                     discrete = T) +
-  
-  scale_y_continuous(breaks = c(0, 5, 10, 15)) +
-  geom_segment(aes(x = -Inf, y = 0, xend = -Inf, yend = 15), 
-               color = 'black', size = rel(1)) +
-  geom_segment(aes(x = 'Neutral', y = -Inf, xend = 'Compatible', yend = -Inf), 
-               color = 'black', size = rel(1)) +
-  
-  labs(x ='Trial Type', 
-       y = expression(bold('N ' ['errors']))) +
-  
-  theme(axis.line = element_blank(),
-        axis.ticks = element_line(size = rel(1.1)),
-        axis.ticks.length = unit(.1, 'cm'),
-        axis.title.y = element_blank(),
-        axis.title.x = element_text(size = 12, 
-                                    face = 'bold', 
-                                    margin = margin(t = 10)),
-        axis.text.y = element_text(size = 11, color = 'black'),
-        axis.text.x =  element_text(size = 11, color = 'black'),
-        legend.title = element_blank(),
-        legend.text = element_text(size = 11, color = 'black'),
-        plot.margin=unit(c(.8,.5,.5,.5),"cm"),
-        legend.position = 'none') + 
-  
-  coord_flip(); print(err_flank)
+# ------ 8) CREATE Follow-Up FIGURES --------------------------------
 
-
-# Number of Incomp. Errors x Affiliation
+# ----- Number of Incomp. Errors x Affiliation ------
 err_aff <- ggplot(as.data.frame(af), 
                   aes(Affiliation, fit)) +
   
   annotate("text", x = -9, y = 45,
-           label = "paste(italic(ß), \" = 0.62*\")", parse = TRUE, size = 3) +
+           label = "paste(italic(ß), \" = 0.62*\")", parse = TRUE, size = 5) +
   
   geom_point(data = In_rm, aes(x = Affiliation, y = N_Errors), 
-             colour="#C13A50FF", size = .9, alpha = .8) +
+             colour="#6B186EFF", size = 1, alpha = .7) +
   geom_ribbon(aes(ymin = lower, ymax = upper), 
               fill='gray', color = NA, alpha = .5) + 
-  geom_line(color='black', size = .8) +
+  geom_line(color='black', size = 1) +
   
   coord_cartesian(ylim = c(0, 45))  +
   
@@ -361,28 +384,31 @@ err_aff <- ggplot(as.data.frame(af),
   theme(axis.line = element_blank(),
         axis.ticks = element_line(size = rel(1.1)),
         axis.ticks.length = unit(.1, 'cm'),
-        axis.text.x = element_text(size = 11, color = 'black'),
-        axis.text.y = element_text(size = 11, color = 'black'),
-        axis.title.x = element_text(size = 12, face = 'bold', 
-                                    margin = margin(t = 10)),
-        axis.title.y = element_text(size = 12, face = 'bold', 
-                                    margin = margin(r = 10)),
-        plot.margin=unit(c(.8,.5,.5,.5),"cm"),
-        legend.position = 'none'); print(err_aff)
+        axis.text.x = element_text(size = 13, color = 'black'),
+        axis.text.y = element_text(size = 13, color = 'black'),
+        axis.title.x = element_text(size = 14, face = 'bold', 
+                                    margin = margin(t = 15)),
+        axis.title.y = element_text(size = 14, face = 'bold', 
+                                    margin = margin(r = 15)),
+        legend.position = 'none'); err_aff
+
+# SAVE PLOT
+save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3a.pdf', 
+          err_aff, base_height = 4, base_width = 3.5)
 
 
-# Number of Incomp. Errors x Agency
+# ----- Number of Incomp. Errors x Agency -----
 err_ag <- ggplot(as.data.frame(ag), 
                   aes(Agency, fit)) +
   
   annotate("text", x = -40, y = 45,
-           label = "paste(italic(ß), \" = 0\")", parse = TRUE, size = 3) +
+           label = "paste(italic(ß), \" = 0\")", parse = TRUE, size = 5) +
   
   geom_point(data = In_rm, aes(x = Agency, y = N_Errors), 
-             colour="#C13A50FF", size = .9, alpha = .8) +
+             colour="#6B186EFF", size = 1, alpha = .7) +
   geom_ribbon(aes(ymin = lower, ymax = upper), 
               fill='gray', color = NA, alpha = .5) + 
-  geom_line(color='black', size = .8) +
+  geom_line(color='black', size = 1) +
   
   coord_cartesian(ylim = c(0, 45))  +
   
@@ -402,30 +428,17 @@ err_ag <- ggplot(as.data.frame(ag),
   theme(axis.line = element_blank(),
         axis.ticks = element_line(size = rel(1.1)),
         axis.ticks.length = unit(.1, 'cm'),
-        axis.text.x = element_text(size = 11, color = 'black'),
-        axis.text.y = element_text(size = 11, color = 'black'),
-        axis.title.x = element_text(size = 12, face = 'bold', 
-                                    margin = margin(t = 10)),
-        axis.title.y = element_text(size = 12, face = 'bold', 
-                                    margin = margin(r = 10)),
-        plot.margin=unit(c(.8,.5,.5,.5),"cm"),
-        legend.position = 'none'); print(err_ag)
+        axis.text.x = element_text(size = 13, color = 'black'),
+        axis.text.y = element_text(size = 13, color = 'black'),
+        axis.title.x = element_text(size = 14, face = 'bold', 
+                                    margin = margin(t = 15)),
+        axis.title.y = element_text(size = 14, face = 'bold', 
+                                    margin = margin(r = 15)),
+        legend.position = 'none'); err_ag
 
-
-# ------ 9) SAVE FIGURES as PDF ------------------------------------
-# Upper panel
-first_row <- plot_grid(err_flank, nrow = 1, labels = c('a)'), 
-                       vjust = 1, hjust = -.5)
-# Lower panes
-second_row = plot_grid(err_aff, err_ag, nrow = 1, labels = c('b)', 'c)'), 
-                       vjust = 1, hjust = -.5)
-# Full figure
-figure_errors <- plot_grid(first_row, second_row, ncol = 1)
-# Save figure
-save_plot('./Desktop/Figure_Errors.pdf', 
-          figure_errors, base_height = 5.5, base_width = 5.5)
-
-
+# SAVE PLOT
+save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3b.pdf', 
+          err_ag, base_height = 4, base_width = 3.5)
 
 
 
@@ -433,16 +446,19 @@ save_plot('./Desktop/Figure_Errors.pdf',
 Errors_In <- as.data.frame(Errors_In, row.names = 1:76)
 
 ## Check distribution
-hist(Errors_In$M_RT)
+hist(Errors_In$M_RT, breaks=10)
+rug(Errors_In$M_RT)
 
 ## Fit Model 
-mod_err_RT <- lm(data = Errors_In, M_RT ~ Interest + Group + Agency + Affiliation)
+mod_err_RT <- lm(data = Errors_In, 
+                 M_RT ~ Interest + Group + Agency + Affiliation)
 anova(mod_err_RT)
 summary(mod_err_RT)
 plot(mod_err_RT)
 
 ## Remove Outliers? --> No effects
-mod_err_RT <- lm(data = Errors_In[-c(18, 37), ], M_RT ~ Interest + Group + Agency + Affiliation)
+mod_err_RT <- lm(data = Errors_In[-c(18, 37), ],
+                 M_RT ~ Interest + Group + Agency + Affiliation)
 anova(mod_err_RT)
 summary(mod_err_RT)
 plot(mod_err_RT)
