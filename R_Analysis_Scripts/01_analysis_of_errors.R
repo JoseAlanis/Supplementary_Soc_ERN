@@ -225,12 +225,14 @@ mutate(as.data.frame(est_group$contrasts),
 err_p <- ggplot(data = as.data.frame(emmeans(mod_errors_1, ~ Flankers)), 
        aes(y = emmean, x = Flankers)) + 
   
+  geom_hline(yintercept = mean(as.data.frame(emmeans(mod_errors_1, ~ Flankers))[, 2]), linetype=2) +
+  
   geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL, color = Flankers), 
                 width = 0.2, size = 1, alpha=0.7) + 
   geom_linerange(aes(ymin = emmean-SE, ymax = emmean+SE), color = 'gray',
                  size = 3) + 
   geom_point(shape = 18, size = 3.5, color = 'black') +
-  labs(y = expression(bold('estimated incidence ' ['log scaled'])), x = 'Trial Type') +
+  labs(y = expression(bold('Estimated Incidence ' ['log scaled'])), x = 'Trial Type') +
 
   theme_classic() + 
   
