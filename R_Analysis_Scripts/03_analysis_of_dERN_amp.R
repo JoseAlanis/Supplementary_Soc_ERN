@@ -129,7 +129,8 @@ ggplot(filter(Ave_ERN, Electrode == 'FCz' | Electrode == 'Cz', Time >= -500),
 
 # ------ MODEL ∆ERN as function of electrodes -------------------
 # AVERAGE for model
-Ave_Elec <- plyr::ddply(filter(data_wide, (Time >= 0 & Time <= 100) & (Electrode == 'FCz' | Electrode == 'Cz' | Electrode == 'CPz')), 
+Ave_Elec <- plyr::ddply(filter(data_wide, (Time >= 0 & Time <= 100) & 
+                                 (Electrode == 'FCz' | Electrode == 'Cz' | Electrode == 'CPz')), 
                        c('Group', 'Electrode', 'Subject'), dplyr::summarise,
                        
                        N = sum(!is.na(ERN)),
@@ -320,7 +321,7 @@ Ave_ERN <- plyr::ddply(cz_fcz,
                        c('Group', 'Subject'), dplyr::summarise,
                        ERN_Amp = mean(ERN, na.rm=T)
                        )
-write.table(Ave_ERN, './Desktop/RefTask_2018_Data/DATA/Ave_ERN.txt', row.names = F)
+#write.table(Ave_ERN, './Desktop/RefTask_2018_Data/DATA/Ave_ERN.txt', row.names = F)
 
 
 # ------ PLOT ∆ERN by Group -------------------------------------
