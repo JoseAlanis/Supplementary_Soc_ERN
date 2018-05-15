@@ -22,7 +22,7 @@ load('~/Documents/Experiments/soc_ftask/data_for_r/Errors_Data.RData')
 
 # ------ 1) Create PLOTs with descriptive data ------------------
 
-# ------ Distribution ------
+# ------ Distribution
 ggplot(Errors, aes(N_Errors, fill = Flankers)) +
   geom_histogram(color = 'black', bins = 9) + 
   facet_wrap(~ Flankers, scales = 'free_x') +
@@ -44,7 +44,7 @@ ggplot(Errors, aes(N_Errors, fill = Flankers)) +
   geom_rug()
 
 
-# ----- BOX-PLOT for Manuscript ------
+# ------ BOX-PLOT for Manuscript 
 err_box <-  ggplot(Errors, 
                    aes(x = Flankers, y = N_Errors, color = Flankers)) +
   geom_jitter(width = 0.35, 
@@ -79,9 +79,11 @@ err_box <-  ggplot(Errors,
                                    color = 'black'),
         legend.position = 'none'); err_box 
 
+
 # SAVE PLOT
 save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2a.pdf', 
-          err_box, base_height = 6, base_width = 4)
+          err_box, base_height = 5, base_width = 3.5)
+
 
 
 # ------ 2) COMPUTE and descriptive statistics  --------------------
@@ -138,19 +140,33 @@ rug(Errors$Total_Errors)
 
 # ------ 4) SET UP and FIT reported models  ------------------------
 
-# DUMMY CODE cathegorical predictors 
+# ---- DUMMY CODE cathegorical predictors 
 contrasts(Errors$Group) <- contr.sum(2); contrasts(Errors$Group)
 contrasts(Errors$Flankers) <- contr.sum(4); contrasts(Errors$Flankers)
 
-## FIT model with interaction and controlling for interst
+# ---- FIT model with interaction and controlling for interst
 mod_err_inter <- glmer(data = Errors,
                     N_Errors ~ Interest + Flankers*Group + (1|ID),
                     family = poisson(link = 'log'),
                     control = glmerControl(optimizer="bobyqa"), nAGQ = 20)
 Anova(mod_err_inter, type = 'III')
 
+# ---- Compute resiudals and detect outliers
+er_rm <- stdResid(data = Errors, model = mod_err_inter, plot = T, 
+                 main = expression('Residuals ' ['Poisson model for error data']), 
+                 xlab = expression('Fitted Values ' ['N Errors']),
+                 ylab = 'Std. Pearson Residuals', show.bound = T, show.loess = T)
 
-# FIT the reported models
+# ---- Re-fit without outliers
+mod_err_inter_1 <- glmer(data = filter(er_rm, Outlier == 0),
+                       N_Errors ~ Interest + Flankers*Group + (1|ID),
+                       family = poisson(link = 'log'),
+                       control = glmerControl(optimizer="bobyqa"), nAGQ = 20)
+Anova(mod_err_inter_1, type = 'III')
+
+
+
+# ----- FIT model with-out interaction
 mod_errors <- glmer(data = Errors, 
                     N_Errors ~ Flankers + Group + (1|ID), 
                     family = poisson(link = 'log'),
@@ -175,47 +191,55 @@ summary(mod_errors_1)
 qqPlot(resid(mod_errors_1))
 
 
-# Compare models with and without interaction
-anova(mod_err_inter, mod_errors) ## Interaction does not improve the model
-
 # Coefficent of deteminations
 # R2m = only fixed effects, R2c = with random effects
+r.squaredGLMM(update(mod_err_inter_1, nAGQ = 1)) # fit model by Laplace approximation
 r.squaredGLMM(update(mod_errors_1, nAGQ = 1)) # fit model by Laplace approximation
 
-# Check overdisperion
+# Compare models with and without interaction
+anova(mod_err_inter, mod_errors) # Interaction doesn't improve the model
+
+# Build table
+sjPlot::sjt.glmer(mod_err_inter_1, mod_errors_1, exp.coef = F,
+                  show.aic = TRUE, p.numeric = FALSE,
+                  string.est = "Estimate",
+                  string.ci = "Conf. Int.",
+                  string.p = "p-value",
+                  depvar.labels = c("Number of Errors", "Number of Errors"),
+                  pred.labels = c("∆Motivation", "Compatible",
+                                  "Incompatible", "Identical", 'Competition',
+                                  "Compatible:Competition", "Incompatible:Competition", 
+                                  "Identical:Competition" ))
+
+# Check for overdisperion
 overDisp(mod_errors_1)
+
+
 
 # ------ 5) PAIRWISE CONTRASTS for error model ---------------------
 
 # Summary of simple slopes
 err_grid <- ref_grid(mod_errors_1)
-summary(err_grid, infer=T, type = 'response')
+summary(err_grid, infer=T)
 
 # Save trial type estimates
 est_err <- emmeans(mod_errors_1, pairwise ~ Flankers,
-                   transform = 'response',
                    adjust = 'bonferroni')
-
+as.data.frame(est_err$contrasts)
 # Effect of trial type
-as.data.frame(est_err$emmeans)
-est_err$contrasts
-# Compute CIs
-mutate(as.data.frame(est_err$contrasts), 
-       LCL = estimate - SE * 1.96, 
-       UCL = estimate + SE * 1.96)
+# and CIs
+confint(est_err)
+
 
 # Save group estimates
 est_group <- emmeans(mod_errors_1, pairwise ~ Group,
-                   transform = 'response',
                    adjust = 'bonferroni')
 
 # Effect of group
-as.data.frame(est_group$emmeans)
-est_group$contrasts
+as.data.frame(est_group$contrasts)
+
 # Compute CIs
-mutate(as.data.frame(est_group$contrasts), 
-       LCL = estimate - SE * 1.96, 
-       UCL = estimate + SE * 1.96)
+confint(est_group)
 
 
 
@@ -232,7 +256,7 @@ err_p <- ggplot(data = as.data.frame(emmeans(mod_errors_1, ~ Flankers)),
   geom_linerange(aes(ymin = emmean-SE, ymax = emmean+SE), color = 'gray',
                  size = 3) + 
   geom_point(shape = 18, size = 3.5, color = 'black') +
-  labs(y = expression(bold('Estimated Incidence ' ['log scaled'])), x = 'Trial Type') +
+  labs(y = expression(bold('Estimated Incidence ' ['log-scaled'])), x = 'Trial Type') +
 
   theme_classic() + 
   
@@ -257,39 +281,56 @@ err_p <- ggplot(data = as.data.frame(emmeans(mod_errors_1, ~ Flankers)),
                                    color = 'black'),
         legend.position = 'none'); err_p
 
+
 # SAVE PLOT
 save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2b.pdf', 
-          err_p, base_height = 6, base_width = 2.5)
+          err_p, base_height = 5, base_width = 2.5)
+
+
+
+
 
 
 # ------ 7) FOLLOW-UP analyses - Incompatible trials ---------------
 
-# Subset of data - only incompatible triasl
+# ----- Subset of data - only incompatible triasl
 Errors_In <- filter(Errors, Flankers == 'Incompatible')
 
-# Effect code predictors
+# ----- Effect code predictors
 contrasts(Errors_In$Group) <- contr.sum(2); contrasts(Errors_In$Group)
 
-## MODEL without random structure (uncomment to run)
-# mod_err_int <- glm(data = Errors_In, N_Errors ~ Group*SC_Centred + Group*MAE_Centred,
-#                      family = poisson(link = 'log'))
-# car::Anova(mod_err_int, type='III')
-# plot(mod_err_int)
-
-# FIT a full model controlling for interest
+# ----- FIT a full model controlling for ∆Motivation
 mod_full_err_in <- glmer(data = Errors_In, N_Errors ~
                       Interest + Group*Affiliation + Group*Agency + (1|ID),
                     family = poisson(link = 'log'),
                     control = glmerControl(optimizer="bobyqa"), nAGQ = 20)
+# ANOVA
 car::Anova(mod_full_err_in, type='III')
 
+# ----- Detect outlying observations
+Ini_rm <- stdResid(data = Errors_In, mod_full_err_in, 
+                  return.data = T, plot = T, 
+                  show.loess = T, show.bound = T,
+                  main = expression('Residuals ' ['Poisson model for in. error data']), 
+                  xlab = expression('Fitted Values ' ['N Errors']),
+                  ylab = 'Std. Pearson Residuals')
 
-# FIT the reported models
+# ----- RE-FIT without outliers
+mod_full_err_in_1 <- glmer(data = filter(Ini_rm, Outlier == 0), N_Errors ~
+                           Interest + Group*Affiliation + Group*Agency + (1|ID),
+                         family = poisson(link = 'log'),
+                         control = glmerControl(optimizer="bobyqa"), nAGQ = 20)
+# ANOVA
+car::Anova(mod_full_err_in_1, type='III')
+
+
+# FIT the model with-out ∆Motivation
 mod_err_in <- glmer(data = Errors_In, 
                         N_Errors ~ Group + Affiliation + Agency + (1|ID), 
                     family = poisson(link = 'log'), 
                     control = glmerControl(optimizer = "bobyqa"), 
                     nAGQ = 20)
+# ANOVA
 Anova(mod_err_in, type='III')
 qqPlot(resid(mod_err_in))
 
@@ -312,25 +353,35 @@ summary(mod_err_in_1)
 qqPlot(resid(mod_err_in_1))
 
 
-# Compare models with and without angency interaction
-anova(mod_full_err_in, mod_err_in) ## Interactions does not improve the model
-
-
 # Coefficent of deteminations
 # R2m = only fixed effects, R2c = with random effects
+r.squaredGLMM(update(mod_full_err_in_1, nAGQ = 1)) # fit model by Laplace approximation
 r.squaredGLMM(update(mod_err_in_1, nAGQ = 1)) # fit model by Laplace approximation
 
-# Check overdisperion
+# Compare models with and without interaction
+anova(mod_full_err_in, mod_err_in) # Interactions doesn't improve the model
+
+# Build table
+sjPlot::sjt.glmer(mod_full_err_in_1, mod_err_in_1, exp.coef = F,
+                  show.aic = TRUE, p.numeric = FALSE,
+                  string.est = "Estimate",
+                  string.ci = "Conf. Int.",
+                  string.p = "p-value",
+                  depvar.labels = c("Number of Incomp. Errors", "Number of Incomp. Errors"),
+                  pred.labels = c("∆Motivation", "Competition",
+                                  "Affiliation", "Agency", 'Competition x Affiliation',
+                                  'Competition x Agency') )
+
+# Check for overdisperion
 overDisp(mod_err_in_1)
 
-# Save Simple slopes of Affiliation
+# Save simple slopes of Affiliation
 emm_trend_SC <- emtrends(mod_err_in_1, 
          var= 'Affiliation', 
-         ~ 1, 
-         transform ='response')
+         ~ 1)
 
 # Effects of Affiliation
-summary(emm_trend_SC, infer=T)
+summary(emm_trend_SC, type = 'response')
 
 # Save Simple slopes of Agency
 emm_trend_MAE <- emtrends(mod_err_in_1, 
@@ -341,47 +392,38 @@ emm_trend_MAE <- emtrends(mod_err_in_1,
 summary(emm_trend_MAE, infer=T)
 
 
-# Save estimates
-af <- Effect(mod = mod_err_in_1, 
-             c("Affiliation"), 
-             xlevels = list(Affiliation = 20),  
-             partial.residuals = T) 
-
-ag <- Effect(mod = mod_err_in_1, 
-             c("Agency"), 
-             xlevels = list(Agency = 20),  
-             partial.residuals = T) 
-
 
 # ------ 8) CREATE Follow-Up FIGURES --------------------------------
-
 # ----- Number of Incomp. Errors x Affiliation ------
-err_aff <- ggplot(as.data.frame(af), 
-                  aes(Affiliation, fit)) +
+
+dat_I <- filter(In_rm, Outlier == 0)
+dat_I$pred <- predict(mod_err_in_1)
+
+
+err_aff <- ggplot(dat_I, aes(x = Affiliation, y = pred)) +
   
-  annotate("text", x = -9, y = 45,
-           label = "paste(italic(ß), \" = 0.62*\")", parse = TRUE, size = 5) +
+  annotate("text", x = -9, y = 4,
+           label = "paste(italic(ß), \" = 0.05*\")", parse = TRUE, 
+           size = 5) +
   
-  geom_point(data = In_rm, aes(x = Affiliation, y = N_Errors), 
-             colour="#6B186EFF", size = 1, alpha = .7) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), 
-              fill='gray', color = NA, alpha = .5) + 
-  geom_line(color='black', size = 1) +
+  geom_point(colour="#6B186EFF", size = 1, alpha = .7) +
   
-  coord_cartesian(ylim = c(0, 45))  +
+  geom_smooth(method="glm", color = 'black', fill="#6B186EFF", alpha = .2) +
+  
+  coord_cartesian(ylim = c(1, 4))  +
   
   theme_classic() + 
   
   scale_x_continuous(breaks = c(-12, -6, 0, 6)) + 
-  scale_y_continuous(breaks = c(0, 15, 30, 45)) +
+  scale_y_continuous(breaks = c(1, 2, 3, 4)) +
   
-  geom_segment(aes(x = -Inf, y = 0, xend = -Inf, yend = 45), 
+  geom_segment(aes(x = -Inf, y = 1, xend = -Inf, yend = 4), 
                color='black', size=rel(1)) +
   geom_segment(aes(x = -12, y = -Inf, xend = 6, yend = -Inf), 
                color='black', size=rel(1)) +
   
   labs(x =expression(bold('Affiliation' [' centred'])), 
-       y = expression(bold('N ' ['incom. errors']))) +
+       y = expression(bold('Est. Incidence of Incom. Errors ' ['log scaled']))) +
   
   theme(axis.line = element_blank(),
         axis.ticks = element_line(size = rel(1.1)),
@@ -395,37 +437,34 @@ err_aff <- ggplot(as.data.frame(af),
         legend.position = 'none'); err_aff
 
 # SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3a.pdf', 
-          err_aff, base_height = 4, base_width = 3.5)
+save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2c.pdf', 
+          err_aff, base_height = 5, base_width = 4)
 
 
 # ----- Number of Incomp. Errors x Agency -----
-err_ag <- ggplot(as.data.frame(ag), 
-                  aes(Agency, fit)) +
+err_ag <- ggplot(dat_I, aes(x = Agency, y = pred)) +
   
   annotate("text", x = -40, y = 45,
            label = "paste(italic(ß), \" = 0\")", parse = TRUE, size = 5) +
   
-  geom_point(data = In_rm, aes(x = Agency, y = N_Errors), 
-             colour="#6B186EFF", size = 1, alpha = .7) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), 
-              fill='gray', color = NA, alpha = .5) + 
-  geom_line(color='black', size = 1) +
+  geom_point(colour="#6B186EFF", size = 1, alpha = .7) +
   
-  coord_cartesian(ylim = c(0, 45))  +
+  geom_smooth(method="glm", color = 'black', fill="#6B186EFF", alpha = .2) +
+  
+  coord_cartesian(ylim = c(1, 4))  +
   
   theme_classic() + 
   
   scale_x_continuous(breaks = c(-50, -25, 0, 25)) + 
-  scale_y_continuous(breaks = c(0, 15, 30, 45)) +
+  scale_y_continuous(breaks = c(1, 2, 3, 4)) +
   
-  geom_segment(aes(x = -Inf, y = 0, xend = -Inf, yend = 45), 
+  geom_segment(aes(x = -Inf, y = 1, xend = -Inf, yend = 4), 
                color='black', size=rel(1)) +
   geom_segment(aes(x = -50, y = -Inf, xend = 25, yend = -Inf), 
                color='black', size=rel(1)) +
   
   labs(x =expression(bold('Agency' [' centred'])), 
-       y = expression(bold('N ' ['incom. errors']))) +
+       y = expression(bold('Est. Incidence of Incom. Errors ' ['log scaled']))) +
   
   theme(axis.line = element_blank(),
         axis.ticks = element_line(size = rel(1.1)),
@@ -439,7 +478,7 @@ err_ag <- ggplot(as.data.frame(ag),
         legend.position = 'none'); err_ag
 
 # SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3b.pdf', 
+save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2d.pdf', 
           err_ag, base_height = 4, base_width = 3.5)
 
 
