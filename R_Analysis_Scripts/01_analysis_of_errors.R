@@ -3,9 +3,9 @@
 #                                 error data
 
 # Get helper functions
-source('./Documents/GitHub/Supplementary_Soc_ERN/R_Functions/getPacks.R')
-source('./Documents/GitHub/Supplementary_Soc_ERN/R_Functions/stdResid.R')
-source('./Documents/GitHub/Supplementary_Soc_ERN/R_Functions/overDisp.R')
+source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/getPacks.R')
+source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/stdResid.R')
+source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/overDisp.R')
 
 # Install and load multiple R packages necessary for analysis.
 pkgs <- c('dplyr', 
@@ -47,13 +47,16 @@ ggplot(Errors, aes(N_Errors, fill = Flankers)) +
 # ------ BOX-PLOT for Manuscript 
 err_box <-  ggplot(Errors, 
                    aes(x = Flankers, y = N_Errors, color = Flankers)) +
+  
+  geom_violin(fill = NA, 
+              color='black', trim = T) + 
+  
   geom_jitter(width = 0.35, 
               alpha = 0.7,
               size = 0.7) +
-  geom_boxplot(width = 0.25, size = 0.8,
-               fill = NA, 
-               outlier.colour = NA, 
-               color='black') +
+  
+  stat_summary(fun.data = data_summary, color = 'black', shape = 23, fill='black', size = .3) +
+
   labs(x = 'Trial Type', 
        y = 'Number of Errors') + 
   theme_classic() +
@@ -249,14 +252,17 @@ confint(est_group)
 err_p <- ggplot(data = as.data.frame(emmeans(mod_errors_1, ~ Flankers)), 
        aes(y = emmean, x = Flankers)) + 
   
-  geom_hline(yintercept = mean(as.data.frame(emmeans(mod_errors_1, ~ Flankers))[, 2]), linetype=2) +
+  geom_hline(yintercept = mean(as.data.frame(emmeans(mod_errors_1, ~ Flankers))[, 2]), 
+             linetype=2) +
   
   geom_errorbar(aes(ymin = asymp.LCL, ymax = asymp.UCL, color = Flankers), 
                 width = 0.2, size = 1, alpha=0.7) + 
   geom_linerange(aes(ymin = emmean-SE, ymax = emmean+SE), color = 'gray',
                  size = 3) + 
   geom_point(shape = 18, size = 3.5, color = 'black') +
-  labs(y = expression(bold('Estimated Incidence ' ['log-scaled'])), x = 'Trial Type') +
+  
+  labs(y = expression(bold('Estimated Incidence ' ['log scaled'])),
+       x = 'Trial Type') +
 
   theme_classic() + 
   
