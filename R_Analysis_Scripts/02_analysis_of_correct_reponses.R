@@ -5,6 +5,7 @@
 # Get helper functions
 source('./Documents/GitHub/Supplementary_Soc_ERN/R_Functions/getPacks.R')
 source('./Documents/GitHub/Supplementary_Soc_ERN/R_Functions/stdResid.R')
+source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/data_summary.R')
 
 
 # Install and load multiple R packages necessary for analysis.
@@ -23,7 +24,7 @@ load('~/Documents/Experiments/soc_ftask/data_for_r/Corrects_Data.RData')
 
 # ------ 1) PLOT RT by flankers ---------------------------------
 
-# ------ Distribution ------
+# ------ Distribution 
 ggplot(Corrects, aes(M_RT, fill = Flankers)) +
   geom_histogram(color = 'black', bins = 15) + 
   facet_wrap(~ Flankers) +
@@ -45,21 +46,22 @@ ggplot(Corrects, aes(M_RT, fill = Flankers)) +
   geom_rug()
 
 
-# ----- BOX-PLOT for Manuscript ------
-corr_box <-  ggplot(Corrects, 
+# ----- BOX-PLOT for Manuscript
+corr_box <- ggplot(Corrects, 
                    aes(x = Flankers, y = M_RT, color = Flankers)) +
+  
+  geom_violin(fill = NA, 
+              color='black', trim = T) + 
   
   geom_jitter(width = 0.35, 
               alpha = 0.7,
               size = 0.7) +
   
-  geom_boxplot(width = 0.25, size = 0.8,
-               fill = NA, 
-               outlier.colour = NA, 
-               color='black') +
+  stat_summary(fun.data = data_summary, color = 'black', shape = 23, 
+               fill='black', size = .3) +
   
   labs(x = 'Trial Type', 
-       y = expression(bold('Mean RT ' ['ms']))) + 
+       y = expression(bold('Mean RT (ms)'))) + 
   
   theme_classic() +
 
@@ -86,9 +88,11 @@ corr_box <-  ggplot(Corrects,
                                    color = 'black'),
         legend.position = 'none'); corr_box
 
+
 # SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4a.pdf', 
-          corr_box, base_height = 6, base_width = 4)
+save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3a.pdf', 
+          corr_box, base_height = 5, base_width = 3.5)
+
 
 # ------ 2) EFFECT CODE and center predictors -------------------
 # Effect code
@@ -132,18 +136,18 @@ rug(Corrects$M_RT)
 # FULL MODEL with interactions and controlling for
 # overall number of errors
 mod_full <- lmer(data = Corrects, M_RT ~ Interest + Tot_Errors + 
-                    Group*Flankers*Affiliation + Group*Flankers*Agency + (1|ID))
+                    Group*Flankers*Affiliation + Group*Flankers*Agency + (1|ID), REML = F)
 anova(mod_full)
 
 # Identify outlying observations
 c_rm <- stdResid(data = Corrects, model = mod_full, plot = T, 
                  main = expression('Residuals ' ['LMER model for RT data']), 
                  xlab = expression('Fitted Values ' ['Mean RT']),
-                 ylab = 'Std. Pearson Residuals', show.bound = T, show.loess = T)
+                 ylab = 'Std. Pearson Residuals', show.bound = T)
 
 # Re-fit without outliers
 mod_full_1 <- lmer(data = filter(c_rm, Outlier == 0), M_RT ~ Interest + Tot_Errors + 
-                     Group*Flankers*Affiliation + Group*Flankers*Agency + (1|ID))
+                     Group*Flankers*Affiliation + Group*Flankers*Agency + (1|ID), REML = F)
 anova(mod_full_1)
 
 
@@ -151,7 +155,7 @@ anova(mod_full_1)
 
 # MODEL including personality variables
 mod_corrects <- lmer(data = Corrects, M_RT ~ Tot_Errors + Interest + 
-                       Group + Flankers + Affiliation + Agency + (1|ID))
+                       Group + Flankers + Affiliation + Agency + (1|ID), REML = F)
 anova(mod_corrects)
 qqPlot(resid(mod_corrects, 'pearson'))
 
@@ -159,46 +163,55 @@ qqPlot(resid(mod_corrects, 'pearson'))
 c_rm <- stdResid(data = Corrects, model = mod_corrects, plot = T, 
                  main = expression('Residuals ' ['LMER model for RT data']), 
                  xlab = expression('Fitted Values ' ['Mean RT']),
-                 ylab = 'Std. Pearson Residuals', show.bound = T, show.loess = T)
+                 ylab = 'Std. Pearson Residuals', show.bound = T)
 
 # Re-fit without outliers
 mod_corrects_1 <- lmer(data = filter(c_rm, Outlier == 0), M_RT ~ Tot_Errors + Interest + 
-                         Group + Flankers + Affiliation + Agency + (1|ID))
+                         Group + Flankers + Affiliation + Agency + (1|ID), REML = F)
 anova(mod_corrects_1)
 summary(mod_corrects_1)
 car::qqPlot(resid(mod_corrects_1))
 
 # Compare models with and without interactions
-anova(mod_full, mod_corrects) ## Interactions do not improve model
+anova(mod_full, mod_corrects) # Interaction doesnt improve model
 
-# NULL MODEL
-mod_null <- lmer(data = filter(c_rm, Outlier == 0), M_RT ~ 1 + (1|ID))
-anova(mod_null)
-summary(mod_null)
+
+# Build tablemod_corrects_1
+sjPlot::sjt.lmer(mod_full_1, mod_corrects_1,
+                 show.aic = TRUE, p.numeric = FALSE,
+                 string.est = "Estimate",
+                 string.ci = "Conf. Int.",
+                 string.p = "p-value",
+                 depvar.labels = c("Reaction Time", "Reaction Time"))
+
+sjPlot::sjt.lmer(mod_corrects_1,
+                  show.aic = TRUE, p.numeric = FALSE,
+                  string.est = "Estimate",
+                  string.ci = "Conf. Int.",
+                  string.p = "p-value",
+                  depvar.labels = c("Reaction Time"),
+                  pred.labels = c('N Errors', '∆Motivation',
+                                 'Competition', 'Compatible', 'Incompatible',
+                                 'Neutral', 'Affiliation', 'Agency')
+)
 
 # Compute R-squared and omega squared
 r.squaredGLMM(mod_corrects_1)
-r2(mod_corrects_1, n = mod_null)
 
 # ------ 6) Follow UP analyses for RT model -------------------------
 # Summary of simple slopes
 rt_grid <- ref_grid(mod_corrects_1)
-summary(rt_grid, infer = T, type = 'response')
+summary(rt_grid, infer = T)
 
 # Save trial type estimates
 rt_flank <- emmeans(mod_corrects_1, pairwise ~ Flankers, 
-                     type = 'response', 
                      adjust = 'bonferroni', lmer.df = 'satterthwaite')
 
 # Estimated marginal means for trail type
-rt_flank$emmeans
+as.data.frame(rt_flank$contrasts)
 
-# Multiple comparissons for trial type
-rt_flank$contrasts
 # Compute CIs
-mutate(as.data.frame(rt_flank$contrasts), 
-       LCL = estimate - SE * 1.96, 
-       UCL = estimate + SE * 1.96)
+confint(rt_flank)
 
 
 
@@ -228,31 +241,10 @@ rt_ae
 
 
 
-# Save errors estimates
-rt_err_CI <- emtrends(mod_corrects_1, ~ 1, var='Tot_Errors')
-rt_err_CI
-
-rt_err <- Effect(mod = mod_corrects_1, 
-             c("Tot_Errors"), 
-             xlevels = list(Tot_Errors = 20),  
-             partial.residuals=T) 
-
-
-# Save interest estimates
-rt_int_CI <-emtrends(mod_corrects_1, ~ 1, var='Interest')
-rt_int_CI
-
-rt_int <- Effect(mod = mod_corrects_1, 
-                 c("Interest"), 
-                 xlevels = list(Interest = 20),  
-                 partial.residuals=T) 
-
-
-
 # ------ 7) Create FIGURES ------------------------------------------
 
 # ----- Plot trial type estimates -----
-# PLOT log-estimates
+# PLOT estimates
 corr_p <- ggplot(data = as.data.frame(rt_flank$emmeans), 
                 aes(y = emmean, x = Flankers)) + 
   
@@ -264,7 +256,7 @@ corr_p <- ggplot(data = as.data.frame(rt_flank$emmeans),
   geom_linerange(aes(ymin = emmean-SE, ymax = emmean+SE), color = 'gray',
                  size = 3) + 
   geom_point(shape = 18, size = 3.5, color = 'black') +
-  labs(y = expression(bold('Estimated Mean RT ' ['ms'])), x = 'Trial Type') +
+  labs(y = expression(bold('Estimated Mean RT (ms)')), x = 'Trial Type') +
   
   theme_classic() + 
   
@@ -292,22 +284,22 @@ corr_p <- ggplot(data = as.data.frame(rt_flank$emmeans),
         legend.position = 'none'); corr_p
 
 # SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4b.pdf', 
-          corr_p, base_height = 6, base_width = 2.5)
+save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3b.pdf', 
+          corr_p, base_height = 5, base_width = 2.5)
 
 
 # Effect of Number of Errors 
-err_eff <- ggplot(as.data.frame(rt_err), 
-                  aes(Tot_Errors, fit)) +
+dat_I <- filter(c_rm, Outlier == 0)
+dat_I$pred <- predict(mod_corrects_1)
+
+corr_err <- ggplot(dat_I, aes(x = Tot_Errors, y = pred, color=Flankers)) +
   
   annotate("text", x = -10, y = 450,
            label = "paste(italic(ß), \" = -1.4***\")", parse = TRUE, size = 5) +
   
-  geom_point(data = c_rm, aes(x = Tot_Errors, y = M_RT, colour=Flankers), 
-             size = 1, alpha = .7) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), 
-              fill='gray', color = NA, alpha = .5) + 
-  geom_line(color='black', size = 1) +
+  geom_point(size = 1, alpha = .7) +
+  
+  geom_smooth(method="glm", color = 'black', fill="black", alpha = .2) +
   
   coord_cartesian(ylim = c(150, 450), xlim = c(-25, 50))  +
 
@@ -324,7 +316,7 @@ err_eff <- ggplot(as.data.frame(rt_err),
                color='black', size=rel(1)) +
   
   labs(x = expression(bold('N Errors ' ['centred'])), 
-       y = expression(bold('Mean RT ' ['ms']))) +
+       y = expression(bold('Mean RT (ms)'))) +
   
   theme(axis.line = element_blank(),
         axis.ticks = element_line(size = rel(1.1)),
@@ -335,25 +327,22 @@ err_eff <- ggplot(as.data.frame(rt_err),
                                     margin = margin(t = 15)),
         axis.title.y = element_text(size = 14, face = 'bold', 
                                     margin = margin(r = 15)),
-        legend.position = 'none'); err_eff
+        legend.position = 'none'); corr_err
 
 # SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_5a.pdf', 
-          err_eff, base_height = 4, base_width = 3.5)
+save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3c.pdf', 
+          corr_err, base_height = 5, base_width = 4)
 
 
 # Effect of Interest
-int_eff <- ggplot(as.data.frame(rt_int), 
-                  aes(Interest, fit)) +
+int_eff <- ggplot(dat_I, aes(x = Interest, y = pred, color=Flankers)) +
   
   annotate("text", x = -7, y = 450,
            label = "paste(italic(ß), \" = 2.1*\")", parse = TRUE, size = 5) +
   
-  geom_point(data = c_rm, aes(x = Interest, y = M_RT, colour = Flankers), 
-             size = 1, alpha = .7) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), 
-              fill='gray', color = NA, alpha = .5) + 
-  geom_line(color='black', size = 1) +
+  geom_point(size = 1, alpha = .7) +
+  
+  geom_smooth(method="glm", color = 'black', fill="black", alpha = .2) +
   
   coord_cartesian(ylim = c(150, 450), xlim = c(-10, 10))  +
 
@@ -385,6 +374,6 @@ int_eff <- ggplot(as.data.frame(rt_int),
 
 
 # SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_5b.pdf', 
-          int_eff, base_height = 4, base_width = 3.5)
+save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3d.pdf', 
+          int_eff, base_height = 5, base_width = 4)
 
