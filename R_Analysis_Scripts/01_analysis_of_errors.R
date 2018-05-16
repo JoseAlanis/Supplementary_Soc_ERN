@@ -205,7 +205,7 @@ r.squaredGLMM(update(mod_errors_1, nAGQ = 1)) # fit model by Laplace approximati
 anova(mod_err_inter, mod_errors) # Interaction doesn't improve the model
 
 # Build table
-sjPlot::sjt.glmer(mod_err_inter_1, mod_errors_1, exp.coef = F,
+sjPlot::sjt.glmer(mod_err_inter_1, mod_errors_1, exp.coef = F, cell.spacing = 0.1,
                   show.aic = TRUE, p.numeric = FALSE,
                   string.est = "Estimate",
                   string.ci = "Conf. Int.",
@@ -370,7 +370,7 @@ r.squaredGLMM(update(mod_err_in_1, nAGQ = 1)) # fit model by Laplace approximati
 anova(mod_full_err_in, mod_err_in) # Interactions doesn't improve the model
 
 # Build table
-sjPlot::sjt.glmer(mod_full_err_in_1, mod_err_in_1, exp.coef = F,
+sjPlot::sjt.glmer(mod_full_err_in_1, mod_err_in_1, exp.coef = F, cell.spacing = 0.1,
                   show.aic = TRUE, p.numeric = FALSE,
                   string.est = "Estimate",
                   string.ci = "Conf. Int.",
