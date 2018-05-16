@@ -178,14 +178,14 @@ anova(mod_full, mod_corrects) # Interaction doesnt improve model
 
 # Build tablemod_corrects_1
 sjPlot::sjt.lmer(mod_full_1, mod_corrects_1,
-                 show.aic = TRUE, p.numeric = FALSE,
+                 show.aic = TRUE, p.numeric = FALSE, cell.spacing = 0.1,
                  string.est = "Estimate",
                  string.ci = "Conf. Int.",
                  string.p = "p-value",
                  depvar.labels = c("Reaction Time", "Reaction Time"))
 
 sjPlot::sjt.lmer(mod_corrects_1,
-                  show.aic = TRUE, p.numeric = FALSE,
+                  show.aic = TRUE, p.numeric = FALSE, cell.spacing = 0.1,
                   string.est = "Estimate",
                   string.ci = "Conf. Int.",
                   string.p = "p-value",
