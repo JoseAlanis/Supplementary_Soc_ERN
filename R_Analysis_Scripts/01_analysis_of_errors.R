@@ -56,7 +56,8 @@ err_box <-  ggplot(Errors,
               alpha = 0.7,
               size = 0.7) +
   
-  stat_summary(fun.data = data_summary, color = 'black', shape = 23, fill='black', size = .3) +
+  stat_summary(fun.data = data_summary, color = 'black', shape = 23, 
+               fill='black', size = .3) +
 
   labs(x = 'Trial Type', 
        y = 'Number of Errors') + 
@@ -415,7 +416,7 @@ err_aff <- ggplot(dat_I, aes(x = Affiliation, y = pred)) +
   
   geom_point(colour="#6B186EFF", size = 1, alpha = .7) +
   
-  geom_smooth(method="glm", color = 'black', fill="#6B186EFF", alpha = .2) +
+  geom_smooth(method="lm", color = 'black', fill="#6B186EFF", alpha = .2) +
   
   coord_cartesian(ylim = c(1, 4))  +
   
