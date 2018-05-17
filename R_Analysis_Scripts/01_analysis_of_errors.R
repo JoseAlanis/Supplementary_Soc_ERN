@@ -93,24 +93,24 @@ save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2a.pdf',
 
 # ------ 2) COMPUTE and descriptive statistics  --------------------
 
-# Errors overall
+# --- Errors overall
 Errors %>% summarise(M = mean(Total_Errors), 
                      SD = sd(Total_Errors), 
                      SE = sd(Total_Errors) / sqrt(sum(!is.na(Total_Errors))))
 
-# Errors by group
+# --- Errors by group
 Errors %>% group_by(Group) %>% 
   summarise(M = mean(Total_Errors), 
             SD = sd(Total_Errors), 
             SE = sd(Total_Errors) / sqrt(sum(!is.na(Total_Errors))))
 
-# Errors by flankers
+# ---- Errors by flankers
 as.data.frame(Errors %>% group_by(Flankers) %>% 
                 summarise(M = mean(N_Errors), 
                           SD = sd(N_Errors), 
                           SE = sd(N_Errors) / sqrt(sum(!is.na(N_Errors)))))
 
-# PLOT distribution
+# --- PLOT distribution
 hist(Errors$Total_Errors)
 rug(Errors$Total_Errors)
 
@@ -134,7 +134,7 @@ rug(Errors$Total_Errors)
 #                         N_Errors ~ Interest + Group*Flankers*Agency +
 #                           Group*Flankers*Affiliation + (1|ID),
 #                         family = poisson(link = 'log'), nAGQ = 20,
-#                         control = glmerControl(optimizer="bobyqa"))
+#                         control = glmerControl(optimizer='bobyqa'))
 # Anova(mod_err_full, type = 'III')
 # qqPlot(resid(mod_err_full))
 # 
@@ -153,7 +153,7 @@ contrasts(Errors$Flankers) <- contr.sum(4); contrasts(Errors$Flankers)
 mod_err_inter <- glmer(data = Errors,
                     N_Errors ~ Interest + Flankers*Group + (1|ID),
                     family = poisson(link = 'log'),
-                    control = glmerControl(optimizer="bobyqa"), nAGQ = 20)
+                    control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
 Anova(mod_err_inter, type = 'III')
 
 # ---- Compute resiudals and detect outliers
@@ -166,7 +166,7 @@ er_rm <- stdResid(data = Errors, model = mod_err_inter, plot = T,
 mod_err_inter_1 <- glmer(data = filter(er_rm, Outlier == 0),
                        N_Errors ~ Interest + Flankers*Group + (1|ID),
                        family = poisson(link = 'log'),
-                       control = glmerControl(optimizer="bobyqa"), nAGQ = 20)
+                       control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
 Anova(mod_err_inter_1, type = 'III')
 
 
@@ -175,7 +175,7 @@ Anova(mod_err_inter_1, type = 'III')
 mod_errors <- glmer(data = Errors, 
                     N_Errors ~ Flankers + Group + (1|ID), 
                     family = poisson(link = 'log'),
-                    control = glmerControl(optimizer="bobyqa"), nAGQ = 20)
+                    control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
 Anova(mod_errors, type='III')
 summary(mod_errors)
 qqPlot(resid(mod_errors))
@@ -190,7 +190,7 @@ e_rm <- stdResid(data = Errors, model = mod_errors, plot = T,
 mod_errors_1 <- glmer(data = filter(e_rm, Outlier == 0),  
                       N_Errors ~ Flankers + Group + (1|ID), 
                       family = poisson(link = 'log'), 
-                      control = glmerControl(optimizer="bobyqa"), nAGQ = 20)
+                      control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
 Anova(mod_errors_1, type='III')
 summary(mod_errors_1)
 qqPlot(resid(mod_errors_1))
@@ -207,50 +207,51 @@ anova(mod_err_inter, mod_errors) # Interaction doesn't improve the model
 # Build table
 sjPlot::sjt.glmer(mod_err_inter_1, mod_errors_1, exp.coef = F, cell.spacing = 0.1,
                   show.aic = TRUE, p.numeric = FALSE,
-                  string.est = "Estimate",
-                  string.ci = "Conf. Int.",
-                  string.p = "p-value",
-                  depvar.labels = c("Number of Errors", "Number of Errors"),
-                  pred.labels = c("∆Motivation", "Compatible",
-                                  "Incompatible", "Identical", 'Competition',
-                                  "Compatible:Competition", "Incompatible:Competition", 
-                                  "Identical:Competition" ))
+                  string.est = 'Estimate',
+                  string.ci = 'Conf. Int.',
+                  string.p = 'p-value',
+                  depvar.labels = c('Number of Errors', 'Number of Errors'),
+                  pred.labels = c('∆Motivation', 'Compatible',
+                                  'Incompatible', 'Identical', 'Competition',
+                                  'Compatible:Competition', 
+                                  'Incompatible:Competition', 
+                                  'Identical:Competition' ))
 
-# Check for overdisperion
+# --- Check for overdisperion
 overDisp(mod_errors_1)
 
 
 
 # ------ 5) PAIRWISE CONTRASTS for error model ---------------------
 
-# Summary of simple slopes
+# --- Summary of simple slopes
 err_grid <- ref_grid(mod_errors_1)
 summary(err_grid, infer=T)
 
-# Save trial type estimates
+# --- Save trial type estimates
 est_err <- emmeans(mod_errors_1, pairwise ~ Flankers,
                    adjust = 'bonferroni')
-as.data.frame(est_err$contrasts)
-# Effect of trial type
-# and CIs
+# --- Effect of trial type
+est_err
+# --- and CIs
 confint(est_err)
 
 
-# Save group estimates
+# --- Save group estimates
 est_group <- emmeans(mod_errors_1, pairwise ~ Group,
                    adjust = 'bonferroni')
 
-# Effect of group
+# --- Effect of group
 as.data.frame(est_group$contrasts)
 
-# Compute CIs
+# --- Compute CIs
 confint(est_group)
 
 
 
 # ------ 6) Plot log estimates for trial type ----------------------
 
-# PLOT log-estimates
+# --- PLOT log-estimates
 err_p <- ggplot(data = as.data.frame(emmeans(mod_errors_1, ~ Flankers)), 
        aes(y = emmean, x = Flankers)) + 
   
@@ -290,12 +291,9 @@ err_p <- ggplot(data = as.data.frame(emmeans(mod_errors_1, ~ Flankers)),
         legend.position = 'none'); err_p
 
 
-# SAVE PLOT
+# --- SAVE PLOT
 save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2b.pdf', 
           err_p, base_height = 5, base_width = 2.5)
-
-
-
 
 
 
@@ -311,14 +309,12 @@ contrasts(Errors_In$Group) <- contr.sum(2); contrasts(Errors_In$Group)
 mod_full_err_in <- glmer(data = Errors_In, N_Errors ~
                       Interest + Group*Affiliation + Group*Agency + (1|ID),
                     family = poisson(link = 'log'),
-                    control = glmerControl(optimizer="bobyqa"), nAGQ = 20)
-# ANOVA
-car::Anova(mod_full_err_in, type='III')
+                    control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
+Anova(mod_full_err_in, type='III')
 
 # ----- Detect outlying observations
 Ini_rm <- stdResid(data = Errors_In, mod_full_err_in, 
-                  return.data = T, plot = T, 
-                  show.loess = T, show.bound = T,
+                  return.data = T, plot = T, show.bound = T,
                   main = expression('Residuals ' ['Poisson model for in. error data']), 
                   xlab = expression('Fitted Values ' ['N Errors']),
                   ylab = 'Std. Pearson Residuals')
@@ -327,22 +323,22 @@ Ini_rm <- stdResid(data = Errors_In, mod_full_err_in,
 mod_full_err_in_1 <- glmer(data = filter(Ini_rm, Outlier == 0), N_Errors ~
                            Interest + Group*Affiliation + Group*Agency + (1|ID),
                          family = poisson(link = 'log'),
-                         control = glmerControl(optimizer="bobyqa"), nAGQ = 20)
-# ANOVA
-car::Anova(mod_full_err_in_1, type='III')
+                         control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
+Anova(mod_full_err_in_1, type='III')
+summary(mod_full_err_in_1)
 
 
 # FIT the model with-out ∆Motivation
 mod_err_in <- glmer(data = Errors_In, 
                         N_Errors ~ Group + Affiliation + Agency + (1|ID), 
                     family = poisson(link = 'log'), 
-                    control = glmerControl(optimizer = "bobyqa"), 
+                    control = glmerControl(optimizer = 'bobyqa'), 
                     nAGQ = 20)
-# ANOVA
 Anova(mod_err_in, type='III')
+summary(mod_err_in)
 qqPlot(resid(mod_err_in))
 
-# Detect outlying observations
+# --- Detect outlying observations
 In_rm <- stdResid(data = Errors_In, mod_err_in, 
                   return.data = T, plot = T, 
                   show.loess = T, show.bound = T,
@@ -350,11 +346,11 @@ In_rm <- stdResid(data = Errors_In, mod_err_in,
                   xlab = expression('Fitted Values ' ['N Errors']),
                   ylab = 'Std. Pearson Residuals')
 
-# RE-FIT without outliers
+# --- Re-fit without outliers
 mod_err_in_1 <- glmer(data = filter(In_rm, Outlier == 0), 
                       N_Errors ~ Group + Affiliation + Agency + (1|ID), 
                       family = poisson(link = 'log'), 
-                      control = glmerControl(optimizer = "bobyqa"), 
+                      control = glmerControl(optimizer = 'bobyqa'), 
                       nAGQ = 20)
 Anova(mod_err_in_1, type='III')
 summary(mod_err_in_1)
@@ -366,37 +362,39 @@ qqPlot(resid(mod_err_in_1))
 r.squaredGLMM(update(mod_full_err_in_1, nAGQ = 1)) # fit model by Laplace approximation
 r.squaredGLMM(update(mod_err_in_1, nAGQ = 1)) # fit model by Laplace approximation
 
-# Compare models with and without interaction
+# --- Compare models with and without interaction
 anova(mod_full_err_in, mod_err_in) # Interactions doesn't improve the model
 
-# Build table
+# --- Build table
 sjPlot::sjt.glmer(mod_full_err_in_1, mod_err_in_1, exp.coef = F, cell.spacing = 0.1,
                   show.aic = TRUE, p.numeric = FALSE,
-                  string.est = "Estimate",
-                  string.ci = "Conf. Int.",
-                  string.p = "p-value",
-                  depvar.labels = c("Number of Incomp. Errors", "Number of Incomp. Errors"),
-                  pred.labels = c("∆Motivation", "Competition",
-                                  "Affiliation", "Agency", 'Competition x Affiliation',
+                  string.est = 'Estimate',
+                  string.ci = 'Conf. Int.',
+                  string.p = 'p-value',
+                  depvar.labels = c('Number of Incomp. Errors', 
+                                    'Number of Incomp. Errors'),
+                  pred.labels = c('∆Motivation', 'Competition',
+                                  'Affiliation', 'Agency', 
+                                  'Competition x Affiliation',
                                   'Competition x Agency') )
 
 # Check for overdisperion
 overDisp(mod_err_in_1)
 
-# Save simple slopes of Affiliation
+# --- Save simple slopes of Affiliation
 emm_trend_SC <- emtrends(mod_err_in_1, 
          var= 'Affiliation', 
          ~ 1)
 
-# Effects of Affiliation
+# --- Effects of Affiliation
 summary(emm_trend_SC, type = 'response')
 
-# Save Simple slopes of Agency
+# --- Save Simple slopes of Agency
 emm_trend_MAE <- emtrends(mod_err_in_1, 
                       var= 'Agency', ~ 1,
                       transform ='response')
 
-# Effect of Agency
+# -- Effect of Agency
 summary(emm_trend_MAE, infer=T)
 
 
@@ -410,13 +408,13 @@ dat_I$pred <- predict(mod_err_in_1)
 
 err_aff <- ggplot(dat_I, aes(x = Affiliation, y = pred)) +
   
-  annotate("text", x = -9, y = 4,
-           label = "paste(italic(ß), \" = 0.05*\")", parse = TRUE, 
+  annotate('text', x = -9, y = 4,
+           label = 'paste(italic(ß), \' = 0.05*\')', parse = TRUE, 
            size = 5) +
   
-  geom_point(colour="#6B186EFF", size = 1, alpha = .7) +
+  geom_point(colour='#6B186EFF', size = 1, alpha = .7) +
   
-  geom_smooth(method="lm", color = 'black', fill="#6B186EFF", alpha = .2) +
+  geom_smooth(method='lm', color = 'black', fill='#6B186EFF', alpha = .2) +
   
   coord_cartesian(ylim = c(1, 4))  +
   
@@ -444,7 +442,7 @@ err_aff <- ggplot(dat_I, aes(x = Affiliation, y = pred)) +
                                     margin = margin(r = 15)),
         legend.position = 'none'); err_aff
 
-# SAVE PLOT
+# --- SAVE PLOT
 save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2c.pdf', 
           err_aff, base_height = 5, base_width = 4)
 
@@ -452,12 +450,12 @@ save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2c.pdf',
 # ----- Number of Incomp. Errors x Agency -----
 err_ag <- ggplot(dat_I, aes(x = Agency, y = pred)) +
   
-  annotate("text", x = -40, y = 45,
-           label = "paste(italic(ß), \" = 0\")", parse = TRUE, size = 5) +
+  annotate('text', x = -40, y = 45,
+           label = 'paste(italic(ß), \' = 0\')', parse = TRUE, size = 5) +
   
-  geom_point(colour="#6B186EFF", size = 1, alpha = .7) +
+  geom_point(colour='#6B186EFF', size = 1, alpha = .7) +
   
-  geom_smooth(method="glm", color = 'black', fill="#6B186EFF", alpha = .2) +
+  geom_smooth(method='glm', color = 'black', fill='#6B186EFF', alpha = .2) +
   
   coord_cartesian(ylim = c(1, 4))  +
   
@@ -494,18 +492,18 @@ save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2d.pdf',
 # ----- 10) ANALYSE RT - Incompatible trials -----------------------
 Errors_In <- as.data.frame(Errors_In, row.names = 1:76)
 
-## Check distribution
+# Check distribution
 hist(Errors_In$M_RT, breaks=10)
 rug(Errors_In$M_RT)
 
-## Fit Model 
+# Fit Model 
 mod_err_RT <- lm(data = Errors_In, 
                  M_RT ~ Interest + Group + Agency + Affiliation)
 anova(mod_err_RT)
 summary(mod_err_RT)
 plot(mod_err_RT)
 
-## Remove Outliers? --> No effects
+# Remove Outliers? --> No effects
 mod_err_RT <- lm(data = Errors_In[-c(18, 37), ],
                  M_RT ~ Interest + Group + Agency + Affiliation)
 anova(mod_err_RT)

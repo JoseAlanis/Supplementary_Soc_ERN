@@ -12,7 +12,7 @@ source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/data_summary.R')
 pkgs <- c('dplyr', 
           'lme4', 'lmerTest', 'sjstats',
           'effects', 'emmeans', 'car', 'MuMIn',
-          'ggplot2', 'viridis')
+          'ggplot2', 'viridis', 'sjPlot')
 
 getPacks(pkgs)
 rm(pkgs)
@@ -23,7 +23,6 @@ load('~/Documents/Experiments/soc_ftask/data_for_r/Corrects_Data.RData')
 
 
 # ------ 1) PLOT RT by flankers ---------------------------------
-
 # ------ Distribution 
 ggplot(Corrects, aes(M_RT, fill = Flankers)) +
   geom_histogram(color = 'black', bins = 15) + 
@@ -89,17 +88,17 @@ corr_box <- ggplot(Corrects,
         legend.position = 'none'); corr_box
 
 
-# SAVE PLOT
+# --- SAVE PLOT
 save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3a.pdf', 
           corr_box, base_height = 5, base_width = 3.5)
 
 
 # ------ 2) EFFECT CODE and center predictors -------------------
-# Effect code
+# --- Effect code
 contrasts(Corrects$Group) <- contr.sum(2)
 contrasts(Corrects$Flankers) <- contr.sum(4)
 
-# Center around zero
+# --- Center around zero
 Corrects <- within(Corrects, {
   I_Errors <- Incomp_Errors - mean(Incomp_Errors, na.rm=T )
   Tot_Errors <- Total_Errors - mean(Total_Errors, na.rm=T )
@@ -107,24 +106,24 @@ Corrects <- within(Corrects, {
 
 # ------ 3) COMPUTE descriptive statistics ----------------------
 
-# RT overall
-Corrects %>% summarise(M = mean(M_RT), 
-                     SD = sd(M_RT), 
-                     SE = sd(M_RT) / sqrt(sum(!is.na(M_RT))))
+# --- RT overall
+Corrects %>% dplyr::summarise(M = mean(M_RT), 
+                              SD = sd(M_RT), 
+                              SE = sd(M_RT) / sqrt(sum(!is.na(M_RT))))
 
-# RT by group
+# --- RT by group
 Corrects %>% group_by(Group) %>% 
-  summarise(M = mean(M_RT), 
-            SD = sd(M_RT), 
-            SE = sd(M_RT) / sqrt(sum(!is.na(M_RT))))
+  dplyr::summarise(M = mean(M_RT), 
+                   SD = sd(M_RT), 
+                   SE = sd(M_RT) / sqrt(sum(!is.na(M_RT))))
 
-# RT by flankers
+# --- RT by flankers
 as.data.frame(Corrects %>% group_by(Flankers) %>% 
-                summarise(M = mean(M_RT), 
-                          SD = sd(M_RT), 
-                          SE = sd(M_RT) / sqrt(sum(!is.na(M_RT)))))
+                dplyr::summarise(M = mean(M_RT), 
+                                 SD = sd(M_RT), 
+                                 SE = sd(M_RT) / sqrt(sum(!is.na(M_RT)))))
 
-# PLOT distribution
+# --- PLOT distribution
 hist(Corrects$M_RT)
 rug(Corrects$M_RT)
 
@@ -133,109 +132,113 @@ rug(Corrects$M_RT)
 
 # ------ 4) SET UP and FIT full model ---------------------------
 
-# FULL MODEL with interactions and controlling for
-# overall number of errors
-mod_full <- lmer(data = Corrects, M_RT ~ Interest + Tot_Errors + 
-                    Group*Flankers*Affiliation + Group*Flankers*Agency + (1|ID), REML = F)
+# --- FULL MODEL with interactions, controlling for
+# --- overall number of errors
+mod_full <- lmer(data = Corrects, 
+                 M_RT ~ Interest + Tot_Errors + 
+                   Group*Flankers*Affiliation + 
+                   Group*Flankers*Agency + (1|ID), 
+                 REML = F)
 anova(mod_full)
 
-# Identify outlying observations
+# --- Identify outlying observations
 c_rm <- stdResid(data = Corrects, model = mod_full, plot = T, 
                  main = expression('Residuals ' ['LMER model for RT data']), 
                  xlab = expression('Fitted Values ' ['Mean RT']),
                  ylab = 'Std. Pearson Residuals', show.bound = T)
 
-# Re-fit without outliers
-mod_full_1 <- lmer(data = filter(c_rm, Outlier == 0), M_RT ~ Interest + Tot_Errors + 
-                     Group*Flankers*Affiliation + Group*Flankers*Agency + (1|ID), REML = F)
+# --- Re-fit without outliers
+mod_full_1 <- lmer(data = filter(c_rm, Outlier == 0), 
+                   M_RT ~ Interest + Tot_Errors + 
+                     Group*Flankers*Affiliation + 
+                     Group*Flankers*Agency + (1|ID), 
+                   REML = F)
 anova(mod_full_1)
 
 
 # ------ 5) SET UP and FIT the reported models ------------------
-
-# MODEL including personality variables
-mod_corrects <- lmer(data = Corrects, M_RT ~ Tot_Errors + Interest + 
-                       Group + Flankers + Affiliation + Agency + (1|ID), REML = F)
+# --- MODEL including personality variables
+mod_corrects <- lmer(data = Corrects, 
+                     M_RT ~ Tot_Errors + Interest + 
+                       Group + Flankers + Affiliation + Agency + (1|ID), 
+                     REML = F)
 anova(mod_corrects)
 qqPlot(resid(mod_corrects, 'pearson'))
 
-# Remove outliers
+# --- Remove outliers
 c_rm <- stdResid(data = Corrects, model = mod_corrects, plot = T, 
                  main = expression('Residuals ' ['LMER model for RT data']), 
                  xlab = expression('Fitted Values ' ['Mean RT']),
                  ylab = 'Std. Pearson Residuals', show.bound = T)
 
-# Re-fit without outliers
+# --- Re-fit without outliers
 mod_corrects_1 <- lmer(data = filter(c_rm, Outlier == 0), M_RT ~ Tot_Errors + Interest + 
                          Group + Flankers + Affiliation + Agency + (1|ID), REML = F)
 anova(mod_corrects_1)
 summary(mod_corrects_1)
 car::qqPlot(resid(mod_corrects_1))
 
-# Compare models with and without interactions
+# --- Compare models with and without interactions
 anova(mod_full, mod_corrects) # Interaction doesnt improve model
 
 
-# Build tablemod_corrects_1
+# --- Build tables
 sjPlot::sjt.lmer(mod_full_1, mod_corrects_1,
-                 show.aic = TRUE, p.numeric = FALSE, cell.spacing = 0.1,
-                 string.est = "Estimate",
-                 string.ci = "Conf. Int.",
-                 string.p = "p-value",
-                 depvar.labels = c("Reaction Time", "Reaction Time"))
+                 show.aic = TRUE, p.numeric = FALSE,
+                 string.est = 'Estimate',
+                 string.ci = 'Conf. Int.',
+                 string.p = 'p-value',
+                 depvar.labels = c('Reaction Time', 'Reaction Time'))
 
-sjPlot::sjt.lmer(mod_corrects_1,
-                  show.aic = TRUE, p.numeric = FALSE, cell.spacing = 0.1,
-                  string.est = "Estimate",
-                  string.ci = "Conf. Int.",
-                  string.p = "p-value",
-                  depvar.labels = c("Reaction Time"),
+sjPlot::sjt.lmer(mod_corrects_1, cell.spacing = 0.1,
+                  show.aic = TRUE, p.numeric = FALSE,
+                  string.est = 'Estimate',
+                  string.ci = 'Conf. Int.',
+                  string.p = 'p-value',
+                  depvar.labels = c('Reaction Time'),
                   pred.labels = c('N Errors', '∆Motivation',
                                  'Competition', 'Compatible', 'Incompatible',
                                  'Neutral', 'Affiliation', 'Agency')
 )
 
-# Compute R-squared and omega squared
+# Coefficient of determination
+# R2m = only fixed effects, R2c = with random effects
 r.squaredGLMM(mod_corrects_1)
 
+
 # ------ 6) Follow UP analyses for RT model -------------------------
-# Summary of simple slopes
+# --- Summary of simple slopes
 rt_grid <- ref_grid(mod_corrects_1)
 summary(rt_grid, infer = T)
 
-# Save trial type estimates
+# -- Save trial type estimates
 rt_flank <- emmeans(mod_corrects_1, pairwise ~ Flankers, 
-                     adjust = 'bonferroni', lmer.df = 'satterthwaite')
+                    adjust = 'bonferroni', 
+                    lmer.df = 'satterthwaite')
 
-# Estimated marginal means for trail type
+# --- Estimated marginal means for trail type
 as.data.frame(rt_flank$contrasts)
 
-# Compute CIs
+# --- Compute CIs
 confint(rt_flank)
 
 
-
-# Save group estimates
+# --- Save group estimates
 rt_group <- emmeans(mod_corrects_1, pairwise ~ Group, 
                     type = 'response', 
                     adjust = 'bonferroni')
 
-# Estimated marginal means for group
-rt_group$emmeans
-
-# Multiple comparissons for group
-rt_group$contrasts
-# Compute CIs
-mutate(as.data.frame(rt_group$contrasts), 
-       LCL = estimate - SE * 1.96, 
-       UCL = estimate + SE * 1.96)
+# --- Estimated marginal means for group
+rt_group
+# --- Compute CIs
+confint(rt_group)
 
 
-# Save affiliation estimates
+# --- Save affiliation estimates
 rt_sc <- emtrends(mod_corrects_1, ~ 1, var='Affiliation')
 rt_sc
 
-# Save agency estimates
+# --- Save agency estimates
 rt_ae <- emtrends(mod_corrects_1, ~ 1, var='Agency')
 rt_ae
 
@@ -243,8 +246,8 @@ rt_ae
 
 # ------ 7) Create FIGURES ------------------------------------------
 
-# ----- Plot trial type estimates -----
-# PLOT estimates
+# ------ 8) Plot trial type estimates -------------------------------
+# --- PLOT estimates
 corr_p <- ggplot(data = as.data.frame(rt_flank$emmeans), 
                 aes(y = emmean, x = Flankers)) + 
   
@@ -283,23 +286,23 @@ corr_p <- ggplot(data = as.data.frame(rt_flank$emmeans),
                                    color = 'black'),
         legend.position = 'none'); corr_p
 
-# SAVE PLOT
+# --- SAVE PLOT
 save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3b.pdf', 
           corr_p, base_height = 5, base_width = 2.5)
 
 
-# Effect of Number of Errors 
+# --- Effect of Number of Errors 
 dat_I <- filter(c_rm, Outlier == 0)
 dat_I$pred <- predict(mod_corrects_1)
 
 corr_err <- ggplot(dat_I, aes(x = Tot_Errors, y = pred, color=Flankers)) +
   
-  annotate("text", x = -10, y = 450,
-           label = "paste(italic(ß), \" = -1.4***\")", parse = TRUE, size = 5) +
+  annotate('text', x = -10, y = 450,
+           label = 'paste(italic(ß), \' = -1.4***\')', parse = TRUE, size = 5) +
   
   geom_point(size = 1, alpha = .7) +
   
-  geom_smooth(method="glm", color = 'black', fill="black", alpha = .2) +
+  geom_smooth(method='glm', color = 'black', fill='black', alpha = .2) +
   
   coord_cartesian(ylim = c(150, 450), xlim = c(-25, 50))  +
 
@@ -329,20 +332,20 @@ corr_err <- ggplot(dat_I, aes(x = Tot_Errors, y = pred, color=Flankers)) +
                                     margin = margin(r = 15)),
         legend.position = 'none'); corr_err
 
-# SAVE PLOT
+# --- SAVE PLOT
 save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3c.pdf', 
           corr_err, base_height = 5, base_width = 4)
 
 
-# Effect of Interest
+# --- Effect of ∆Motivation
 int_eff <- ggplot(dat_I, aes(x = Interest, y = pred, color=Flankers)) +
   
-  annotate("text", x = -7, y = 450,
-           label = "paste(italic(ß), \" = 2.1*\")", parse = TRUE, size = 5) +
+  annotate('text', x = -7, y = 450,
+           label = 'paste(italic(ß), \' = 2.1*\')', parse = TRUE, size = 5) +
   
   geom_point(size = 1, alpha = .7) +
   
-  geom_smooth(method="glm", color = 'black', fill="black", alpha = .2) +
+  geom_smooth(method='glm', color = 'black', fill='black', alpha = .2) +
   
   coord_cartesian(ylim = c(150, 450), xlim = c(-10, 10))  +
 
@@ -373,7 +376,7 @@ int_eff <- ggplot(dat_I, aes(x = Interest, y = pred, color=Flankers)) +
         legend.position = 'none'); int_eff
 
 
-# SAVE PLOT
+# --- SAVE PLOT
 save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3d.pdf', 
           int_eff, base_height = 5, base_width = 4)
 
