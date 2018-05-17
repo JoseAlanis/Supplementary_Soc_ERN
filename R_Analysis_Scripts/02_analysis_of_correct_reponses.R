@@ -4,7 +4,7 @@
 
 # Get helper functions
 source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/getPacks.R')
-source('/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/stdResid.R')
+source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/stdResid.R')
 source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/data_summary.R')
 
 
