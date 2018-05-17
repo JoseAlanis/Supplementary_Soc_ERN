@@ -3,7 +3,7 @@
 #
 
 # Get helper function
-source('./Documents/GitHub/Supplementary_Soc_ERN/R_Functions/getPacks.R')
+source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/getPacks.R')
 source('~/Documents/r_functions/topoplot.R')
 
 # Load packages
