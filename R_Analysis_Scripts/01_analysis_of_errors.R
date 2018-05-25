@@ -59,8 +59,8 @@ err_box <-  ggplot(Errors,
   stat_summary(fun.data = data_summary, color = 'black', shape = 23, 
                fill='black', size = .3) +
 
-  labs(x = 'Trial Type', 
-       y = 'Number of Errors') + 
+  labs(x = 'Trial type', 
+       y = 'Number of errors') + 
   theme_classic() +
   
   geom_segment(aes(x = -Inf, y = 0, xend = -Inf, yend = 50), 
@@ -86,27 +86,27 @@ err_box <-  ggplot(Errors,
 
 
 # SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2a.pdf', 
-          err_box, base_height = 5, base_width = 3.5)
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2a.pdf', 
+          err_box, base_height = 5, base_width = 3)
 
 
 
 # ------ 2) COMPUTE and descriptive statistics  --------------------
 
 # --- Errors overall
-Errors %>% summarise(M = mean(Total_Errors), 
+Errors %>% dplyr::summarise(M = mean(Total_Errors), 
                      SD = sd(Total_Errors), 
                      SE = sd(Total_Errors) / sqrt(sum(!is.na(Total_Errors))))
 
 # --- Errors by group
-Errors %>% group_by(Group) %>% 
+Errors %>% dplyr::group_by(Group) %>% 
   summarise(M = mean(Total_Errors), 
             SD = sd(Total_Errors), 
             SE = sd(Total_Errors) / sqrt(sum(!is.na(Total_Errors))))
 
 # ---- Errors by flankers
-as.data.frame(Errors %>% group_by(Flankers) %>% 
-                summarise(M = mean(N_Errors), 
+as.data.frame(Errors %>% dplyr::group_by(Flankers) %>% 
+                dplyr::summarise(M = mean(N_Errors), 
                           SD = sd(N_Errors), 
                           SE = sd(N_Errors) / sqrt(sum(!is.na(N_Errors)))))
 
@@ -160,7 +160,7 @@ Anova(mod_err_inter, type = 'III')
 er_rm <- stdResid(data = Errors, model = mod_err_inter, plot = T, 
                  main = expression('Residuals ' ['Poisson model for error data']), 
                  xlab = expression('Fitted Values ' ['N Errors']),
-                 ylab = 'Std. Pearson Residuals', show.bound = T, show.loess = T)
+                 ylab = 'Std. Pearson Residuals', show.bound = T)
 
 # ---- Re-fit without outliers
 mod_err_inter_1 <- glmer(data = filter(er_rm, Outlier == 0),
@@ -184,7 +184,7 @@ qqPlot(resid(mod_errors))
 e_rm <- stdResid(data = Errors, model = mod_errors, plot = T, 
          main = expression('Residuals ' ['Poisson model for error data']), 
          xlab = expression('Fitted Values ' ['N Errors']),
-         ylab = 'Std. Pearson Residuals', show.bound = T, show.loess = T)
+         ylab = 'Std. Pearson Residuals', show.bound = T)
 
 # Re-fit without outliers
 mod_errors_1 <- glmer(data = filter(e_rm, Outlier == 0),  
@@ -220,7 +220,9 @@ sjPlot::sjt.glmer(mod_err_inter_1, mod_errors_1, exp.coef = F, cell.spacing = 0.
 # --- Check for overdisperion
 overDisp(mod_errors_1)
 
-
+# Quick Plot
+err_eff <- allEffects(mod_errors_1)
+plot(err_eff)
 
 # ------ 5) PAIRWISE CONTRASTS for error model ---------------------
 
@@ -230,7 +232,7 @@ summary(err_grid, infer=T)
 
 # --- Save trial type estimates
 est_err <- emmeans(mod_errors_1, pairwise ~ Flankers,
-                   adjust = 'bonferroni')
+                   adjust = 'fdr')
 # --- Effect of trial type
 est_err
 # --- and CIs
@@ -239,7 +241,7 @@ confint(est_err)
 
 # --- Save group estimates
 est_group <- emmeans(mod_errors_1, pairwise ~ Group,
-                   adjust = 'bonferroni')
+                   adjust = 'fdr')
 
 # --- Effect of group
 as.data.frame(est_group$contrasts)
@@ -264,8 +266,8 @@ err_p <- ggplot(data = as.data.frame(emmeans(mod_errors_1, ~ Flankers)),
                  size = 3) + 
   geom_point(shape = 18, size = 3.5, color = 'black') +
   
-  labs(y = expression(bold('Estimated Incidence ' ['log scaled'])),
-       x = 'Trial Type') +
+  labs(y = expression(bold('Estimated incidence ' ['log scaled'])),
+       x = 'Trial type') +
 
   theme_classic() + 
   
@@ -292,7 +294,7 @@ err_p <- ggplot(data = as.data.frame(emmeans(mod_errors_1, ~ Flankers)),
 
 
 # --- SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2b.pdf', 
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2b.pdf', 
           err_p, base_height = 5, base_width = 2.5)
 
 
@@ -381,6 +383,7 @@ sjPlot::sjt.glmer(mod_full_err_in_1, mod_err_in_1, exp.coef = F, cell.spacing = 
 # Check for overdisperion
 overDisp(mod_err_in_1)
 
+
 # --- Save simple slopes of Affiliation
 emm_trend_SC <- emtrends(mod_err_in_1, 
          var= 'Affiliation', 
@@ -400,25 +403,35 @@ summary(emm_trend_MAE, infer=T)
 
 
 # ------ 8) CREATE Follow-Up FIGURES --------------------------------
-# ----- Number of Incomp. Errors x Affiliation ------
 
-dat_I <- filter(In_rm, Outlier == 0)
-dat_I$pred <- predict(mod_err_in_1)
+# --- Effects of Affiliation on number of incomp. errors
+dat_I <- allEffects(mod_err_in_1, xlevels = 20, 
+                    transformation=list(trans = NULL, 
+                                        inverse = NULL))
+# --- Quick Plot
+plot(dat_I, ylim = c(1, 5), ylab = 'N Errors')
+# --- Prepare data for plot
+dat_I <- as.data.frame(dat_I[[2]])
+dat_I$upper <- as.numeric(dat_I$upper)
+dat_I$lower <- as.numeric(dat_I$lower)
+dat_I$fit <- as.numeric(dat_I$fit)
+
+dat_p <- filter(In_rm, Outlier == 0)
+dat_p$pred <- predict(mod_err_in_1)
 
 
-err_aff <- ggplot(dat_I, aes(x = Affiliation, y = pred)) +
+err_aff <- ggplot(dat_p, 
+                  aes(x = Affiliation, y = pred, group = Subject)) +
   
-  annotate('text', x = -9, y = 4,
-           label = 'paste(italic(ß), \' = 0.05*\')', parse = TRUE, 
-           size = 5) +
+  stat_summary(fun.y = mean, geom = 'point', size = 1, shape = 16, 
+               position = position_dodge(1), colour='#6B186EFF') +
   
-  geom_point(colour='#6B186EFF', size = 1, alpha = .7) +
-  
-  geom_smooth(method='lm', color = 'black', fill='#6B186EFF', alpha = .2) +
-  
-  coord_cartesian(ylim = c(1, 4))  +
-  
-  theme_classic() + 
+  geom_ribbon(data = dat_I,
+              aes(ymin = lower, ymax = upper, x = Affiliation), 
+              alpha = .2, inherit.aes = F, fill = '#6B186EFF') +
+  geom_line(data = dat_I, 
+            aes(x = Affiliation, y = fit), 
+            inherit.aes = F, size = 0.8, colour = 'black') +
   
   scale_x_continuous(breaks = c(-12, -6, 0, 6)) + 
   scale_y_continuous(breaks = c(1, 2, 3, 4)) +
@@ -426,12 +439,15 @@ err_aff <- ggplot(dat_I, aes(x = Affiliation, y = pred)) +
   geom_segment(aes(x = -Inf, y = 1, xend = -Inf, yend = 4), 
                color='black', size=rel(1)) +
   geom_segment(aes(x = -12, y = -Inf, xend = 6, yend = -Inf), 
-               color='black', size=rel(1)) +
+               color ='black', size=rel(1)) +
   
-  labs(x =expression(bold('Affiliation' [' centred'])), 
-       y = expression(bold('Est. Incidence of Incom. Errors ' ['log scaled']))) +
+  labs(x = expression(bold('Affiliation' [' centred'])), 
+       y = expression(bold('Estimated incidence of incom. errors ' ['log scaled']))) +
   
-  theme(axis.line = element_blank(),
+  theme_classic() + 
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = 14, color = 'black', face = 'bold'),
+        axis.line = element_blank(),
         axis.ticks = element_line(size = rel(1.1)),
         axis.ticks.length = unit(.1, 'cm'),
         axis.text.x = element_text(size = 13, color = 'black'),
@@ -440,11 +456,19 @@ err_aff <- ggplot(dat_I, aes(x = Affiliation, y = pred)) +
                                     margin = margin(t = 15)),
         axis.title.y = element_text(size = 14, face = 'bold', 
                                     margin = margin(r = 15)),
-        legend.position = 'none'); err_aff
+        legend.position = 'bottom', legend.key.width = unit(1, 'cm'),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 12)); err_aff
+
+err_aff <- err_aff + annotate('text', x = -5, y = 1,
+                              label = expression(paste(beta, ' = 0.05*')), 
+                              parse = TRUE, 
+                              size = 5, hjust = 0)
+
 
 # --- SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2c.pdf', 
-          err_aff, base_height = 5, base_width = 4)
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2c.pdf', 
+                   err_aff, base_height = 5, base_width = 4.5)
 
 
 # ----- Number of Incomp. Errors x Agency -----
