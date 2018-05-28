@@ -3,12 +3,12 @@
 #
 
 # Get helper function
-source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/getPacks.R')
+source('./Documents/GitHub/Supplementary_Soc_ERN/R_Functions/getPacks.R')
 source('~/Documents/r_functions/topoplot.R')
 
 # Load packages
-pkgs <- c('plyr', 'dplyr', 'reshape2', 
-          'ggplot2', 'viridis', 'cowplot')
+pkgs <- c('dplyr', 'plyr', 'reshape2', 
+          'ggplot2', 'viridis', 'cowplot', 'RColorBrewer')
 getPacks(pkgs)
 rm(pkgs)
 
@@ -179,7 +179,7 @@ elec_p <- ggplot(filter(Ave_Elect_long,
   
   labs(y = expression(bold(paste("Amplitude (", mu, "V)"))), 
        x = expression(bold('Time (ms)')), 
-       title = expression(bold(paste(Delta,"ERN Across Midline Electrodes")))  ) +
+       title = expression(bold(paste(Delta,"ERN across midline electrodes")))  ) +
   
   geom_segment(aes(x = -Inf, y = -7.5, xend = -Inf, yend = 5), 
                color = 'black', size = rel(1), linetype = 1) +
@@ -207,7 +207,7 @@ elec_p <- ggplot(filter(Ave_Elect_long,
 
 # ----- Save the plot
 save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4a.pdf', 
-          elec_p, base_height = 4.5, base_width = 6)
+          elec_p, base_height = 5, base_width = 7)
 
 # ----- Calculate charthesian coordiantes
 # ----- for Mean ∆ERN topoplot
@@ -234,14 +234,14 @@ t_plot  <- topoplot(to_p, contour = T,
 
 # ----- ADD title
 t_plot <- t_plot + 
-  labs(title = 'Mean Activity') + 
-  theme(plot.title = element_text(hjust = .5, size = 17, face='bold'),
-        legend.title = element_text(hjust = .5, size = 17, face='bold'),
-        legend.text = element_text(size = 17))
+  labs(title = 'Mean activity') + 
+  theme(plot.title = element_text(hjust = .5, size = 19, face='bold'),
+        legend.title = element_text(hjust = .5, size = 19, face='bold'),
+        legend.text = element_text(size = 18))
 
 
 save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4b.pdf', 
-          t_plot, base_height = 4, base_width = 6)
+          t_plot, base_height = 5, base_width = 5)
 
 
 
@@ -271,9 +271,9 @@ ERN_p <- ggplot(filter(Ave_ERN, Time >= -500),
   
   labs(x = expression(bold("Time (ms)")), 
        y = expression(bold(paste("Amplitude (", mu, "V)"))), 
-       title= expression(bold(paste("Grand Averaged ", 
+       title= expression(bold(paste("Grand averaged ", 
                                     Delta, 
-                                    "ERN by Social Context")))) +
+                                    "ERN by social context")))) +
   
   geom_segment(aes(x = -Inf, y = -7.5, xend = -Inf, yend = 5), 
                color = 'black', size = rel(1), linetype = 1) +
@@ -302,7 +302,7 @@ ERN_p <- ggplot(filter(Ave_ERN, Time >= -500),
 
 # SAVE PLOT
 save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_5a.pdf', 
-          ERN_p, base_height = 4.5, base_width = 6)
+          ERN_p, base_height = 5, base_width = 7)
 
 
 # ----- Calculate charthesian coordiantes
@@ -401,7 +401,7 @@ erp_ern <- ggplot(filter(Subj_ERN, Time >= -500),
   scale_x_continuous(breaks = c(-500, -250,  0, 250, 500, 750, 1000)) +
   labs(x = expression(bold('Time (ms)')),
        y = expression(bold('Subject')), 
-       title = expression(bold(paste('ERP Image of Individual ', Delta, 'ERN Averages'))), 
+       title = expression(bold(paste('ERP image of individual ', Delta, 'ERN averages'))), 
        fill = expression(bold(paste('Amplitude (', mu, 'V)')))) +
   theme_classic() +
   geom_segment(aes(x = -Inf, y = 1, xend = -Inf, yend = 76), 
@@ -419,7 +419,7 @@ erp_ern <- ggplot(filter(Subj_ERN, Time >= -500),
     strip.background = element_blank(),
     axis.line = element_blank(),
     legend.title = element_text(color = "black", face = 'bold', size = 12),
-    legend.text = element_text(color = "black", size = 11),
+    legend.text = element_text(color = "black", size = 12),
     legend.key.size = unit(1, 'cm'), 
     legend.position = "bottom"); erp_ern
 
@@ -427,21 +427,25 @@ erp_ern <- ggplot(filter(Subj_ERN, Time >= -500),
 erp_ern <- erp_ern +
   guides(fill = guide_colorbar(title.position = "top", 
                                title.hjust = .5, title.vjust = 1,
-                               barwidth = 10,
-                               barheight = 1.2))
+                               barwidth = 9,
+                               barheight = 1.1))
 
 # ----- SAVE the plot
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_6.pdf', 
-          erp_ern, base_height = 5, base_width = 6)
+save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_5c.pdf', 
+          erp_ern, base_height = 5, base_width = 7)
 
 
 
 # ----- 8) Plot ERPs --------------------------------------
 # ----- CREATE the plot
-ggplot(filter(Ave_ERP, Electrode == 'Cz', # <- select electrode to plot
+ern_crn_erp <- ggplot(filter(Ave_ERP, Electrode == 'FCz', # <- select electrode to plot
               Time >= -500), 
        
        aes(Time, M_Amp, fill = Reaction, linetype = Group, color = Reaction)) + 
+  
+  annotate('text', x = -510, y = -1,
+           label = 'paste(bold(FCz))', parse = TRUE, 
+           size = 3, hjust = 0) +
   
   facet_wrap(~ Group, scales = 'free_y', ncol = 4) + 
   theme_classic() + 
@@ -453,17 +457,17 @@ ggplot(filter(Ave_ERP, Electrode == 'Cz', # <- select electrode to plot
   geom_ribbon(aes(ymin = M_Amp - se, ymax = M_Amp + se), alpha = .4, colour = NA) +
   geom_line( size = rel(1)) + 
   
-  scale_y_reverse(breaks = c(-7 ,-3.5, 0, 3.5, 7)) +
-  scale_x_continuous(breaks = c(-500, 0, 500, 1000)) +
+  scale_y_reverse(breaks = c(-8 ,-4, 0,4, 8)) +
+  scale_x_continuous(breaks = c(-500, -250, 0, 250, 500, 750, 1000)) +
   
-  scale_color_viridis(option = 'B', discrete = T, direction = 1, end = .7) +
-  scale_fill_viridis(option = 'B', discrete = T, direction = 1, end = .7) +
+  scale_color_viridis(option = 'C', discrete = T, direction = 1, end = .6) +
+  scale_fill_viridis(option = 'C', discrete = T, direction = 1, end = .6) +
   
   labs(x = expression(bold("Time (ms)")), 
        y = expression(bold(paste("Amplitude (", mu, "V)"))), 
-       title="Grand Average ERPs") +
+       title="Grand average ERPs") +
   
-  geom_segment(aes(x = -Inf, y = -7, xend = -Inf, yend = 7), 
+  geom_segment(aes(x = -Inf, y = -8, xend = -Inf, yend = 8), 
                color = 'black', size = rel(1), linetype = 1) +
   geom_segment(aes(x = -500, y = Inf, xend = 1000, yend = Inf), 
                color = 'black', size = rel(1), linetype = 1) +
@@ -487,7 +491,74 @@ ggplot(filter(Ave_ERP, Electrode == 'Cz', # <- select electrode to plot
     legend.key.size = unit(0.9, 'cm'),
     legend.title = element_blank(),
     
-    legend.position = "right")
+    legend.position = "right"); ern_crn_erp
+
+
+# ----- SAVE the plot
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_7a.pdf', 
+                   ern_crn_erp, base_height = 5, base_width = 12)
+
+
+ern_crn_erp <- ggplot(filter(Ave_ERP, Electrode == 'Cz', # <- select electrode to plot
+                             Time >= -500), 
+                      
+                      aes(Time, M_Amp, fill = Reaction, linetype = Group, color = Reaction)) + 
+  
+  annotate('text', x = -510, y = -1,
+           label = 'paste(bold(Cz))', parse = TRUE, 
+           size = 3, hjust = 0) +
+  
+  facet_wrap(~ Group, scales = 'free_y', ncol = 4) + 
+  theme_classic() + 
+  
+  annotate("rect", xmin = 0, xmax = 100, ymin = -Inf, ymax = Inf, alpha = .1) +
+  geom_vline(xintercept = c(0), color='black', size = rel(0.5), linetype = 3) +
+  geom_hline(yintercept = c(0), color='black', size = rel(0.5), linetype = 3) +
+  
+  geom_ribbon(aes(ymin = M_Amp - se, ymax = M_Amp + se), alpha = .4, colour = NA) +
+  geom_line( size = rel(1)) + 
+  
+  scale_y_reverse(breaks = c(-8 ,-4, 0, 4, 8)) +
+  scale_x_continuous(breaks = c(-500, -250, 0, 250, 500, 750, 1000)) +
+  
+  scale_color_viridis(option = 'C', discrete = T, direction = 1, end = .6) +
+  scale_fill_viridis(option = 'C', discrete = T, direction = 1, end = .6) +
+  
+  labs(x = expression(bold("Time (ms)")), 
+       y = expression(bold(paste("Amplitude (", mu, "V)"))), 
+       title="Grand Average ERPs") +
+  
+  geom_segment(aes(x = -Inf, y = -8, xend = -Inf, yend = 8), 
+               color = 'black', size = rel(1), linetype = 1) +
+  geom_segment(aes(x = -500, y = Inf, xend = 1000, yend = Inf), 
+               color = 'black', size = rel(1), linetype = 1) +
+  
+  theme(
+    strip.background = element_blank(),
+    axis.line = element_blank(),
+    
+    plot.title = element_text(color = "black", 
+                              hjust = 0.5, vjust = 1, size = 15, face = 'bold'),
+    strip.text = element_text(color = 'black', size = 13, face = 'bold'),
+    axis.title.y = element_text(color = 'black',size = 13, face = 'bold'),
+    axis.title.x = element_text(color = 'black', size = 13, face = 'bold',
+                                margin = margin(t = 15), hjust = .2),
+    axis.text.x = element_text(color = 'black', 
+                               size = 12),
+    axis.text.y  = element_text(color = 'black', 
+                                size = 12, hjust = 1),
+    legend.text = element_text(color = "black", 
+                               size = 12),
+    legend.key.size = unit(0.9, 'cm'),
+    legend.title = element_blank(),
+    
+    legend.position = "right"); ern_crn_erp
+
+
+# ----- SAVE the plot
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_7b.pdf', 
+                   ern_crn_erp, base_height = 5, base_width = 12)
+
 
 
 # ------ 5) Prepare data for plot -----------------------------------
