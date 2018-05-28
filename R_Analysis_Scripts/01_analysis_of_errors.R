@@ -9,7 +9,7 @@ source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/overDisp.R')
 source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/data_summary.R')
 
 # Install and load multiple R packages necessary for analysis.
-pkgs <- c('dplyr', 
+pkgs <- c('dplyr', 'plyr',
           'lme4', 'lmerTest',
           'effects', 'emmeans', 'car', 'MuMIn',
           'ggplot2', 'viridis')
@@ -27,7 +27,7 @@ load('~/Documents/Experiments/soc_ftask/data_for_r/Errors_Data.RData')
 ggplot(Errors, aes(N_Errors, fill = Flankers)) +
   geom_histogram(color = 'black', bins = 9) + 
   facet_wrap(~ Flankers, scales = 'free_x') +
-  labs(x = '\n Number of Errors', y = 'Frequency \n') + 
+  labs(x = '\n Number of errors', y = 'Frequency \n') + 
   theme_classic() + 
   theme(strip.background = element_blank(),
         strip.text = element_text(size = 12, 
@@ -131,7 +131,7 @@ rug(Errors$Total_Errors)
 # 
 # # FIT full model including all variables and interactions
 # mod_err_full <-  glmer(data = Errors,
-#                         N_Errors ~ Interest + Group*Flankers*Agency +
+#                         N_Errors ~ Motivation + Group*Flankers*Agency +
 #                           Group*Flankers*Affiliation + (1|ID),
 #                         family = poisson(link = 'log'), nAGQ = 20,
 #                         control = glmerControl(optimizer='bobyqa'))
@@ -149,9 +149,9 @@ rug(Errors$Total_Errors)
 contrasts(Errors$Group) <- contr.sum(2); contrasts(Errors$Group)
 contrasts(Errors$Flankers) <- contr.sum(4); contrasts(Errors$Flankers)
 
-# ---- FIT model with interaction and controlling for interst
+# ---- FIT model with interaction and controlling for motivation
 mod_err_inter <- glmer(data = Errors,
-                    N_Errors ~ Interest + Flankers*Group + (1|ID),
+                    N_Errors ~ Motivation + Flankers*Group + (1|ID),
                     family = poisson(link = 'log'),
                     control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
 Anova(mod_err_inter, type = 'III')
@@ -164,7 +164,7 @@ er_rm <- stdResid(data = Errors, model = mod_err_inter, plot = T,
 
 # ---- Re-fit without outliers
 mod_err_inter_1 <- glmer(data = filter(er_rm, Outlier == 0),
-                       N_Errors ~ Interest + Flankers*Group + (1|ID),
+                       N_Errors ~ Motivation + Flankers*Group + (1|ID),
                        family = poisson(link = 'log'),
                        control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
 Anova(mod_err_inter_1, type = 'III')
@@ -235,6 +235,7 @@ est_err <- emmeans(mod_errors_1, pairwise ~ Flankers,
                    adjust = 'fdr')
 # --- Effect of trial type
 est_err
+as.data.frame(est_err$contrasts)
 # --- and CIs
 confint(est_err)
 
@@ -244,6 +245,7 @@ est_group <- emmeans(mod_errors_1, pairwise ~ Group,
                    adjust = 'fdr')
 
 # --- Effect of group
+est_group
 as.data.frame(est_group$contrasts)
 
 # --- Compute CIs
@@ -309,24 +311,24 @@ contrasts(Errors_In$Group) <- contr.sum(2); contrasts(Errors_In$Group)
 
 # ----- FIT a full model controlling for ∆Motivation
 mod_full_err_in <- glmer(data = Errors_In, N_Errors ~
-                      Interest + Group*Affiliation + Group*Agency + (1|ID),
-                    family = poisson(link = 'log'),
-                    control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
-Anova(mod_full_err_in, type='III')
+                           Motivation + Group*Affiliation + Group*Agency + (1|ID),
+                         family = poisson(link = 'log'),
+                         control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
+Anova(mod_full_err_in, type = 'III')
 
 # ----- Detect outlying observations
 Ini_rm <- stdResid(data = Errors_In, mod_full_err_in, 
                   return.data = T, plot = T, show.bound = T,
-                  main = expression('Residuals ' ['Poisson model for in. error data']), 
+                  main = expression('Residuals ' ['Poisson mod. for in. error data']), 
                   xlab = expression('Fitted Values ' ['N Errors']),
                   ylab = 'Std. Pearson Residuals')
 
 # ----- RE-FIT without outliers
 mod_full_err_in_1 <- glmer(data = filter(Ini_rm, Outlier == 0), N_Errors ~
-                           Interest + Group*Affiliation + Group*Agency + (1|ID),
-                         family = poisson(link = 'log'),
-                         control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
-Anova(mod_full_err_in_1, type='III')
+                             Motivation + Group*Affiliation + Group*Agency + (1|ID),
+                           family = poisson(link = 'log'),
+                           control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
+Anova(mod_full_err_in_1, type = 'III')
 summary(mod_full_err_in_1)
 
 
@@ -336,7 +338,7 @@ mod_err_in <- glmer(data = Errors_In,
                     family = poisson(link = 'log'), 
                     control = glmerControl(optimizer = 'bobyqa'), 
                     nAGQ = 20)
-Anova(mod_err_in, type='III')
+Anova(mod_err_in, type = 'III')
 summary(mod_err_in)
 qqPlot(resid(mod_err_in))
 
@@ -536,5 +538,6 @@ plot(mod_err_RT)
 
 ## COMPUTE CONFIDENCE INTERVALLS
 confint(mod_err_RT)
+
 
 
