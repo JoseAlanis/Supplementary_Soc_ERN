@@ -3,13 +3,13 @@
 #                             correct responses data
 
 # Get helper functions
-source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/getPacks.R')
-source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/stdResid.R')
+source('./Documents/GitHub/Supplementary_Soc_ERN/R_Functions/getPacks.R')
+source('./Documents/GitHub/Supplementary_Soc_ERN/R_Functions/stdResid.R')
 source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/data_summary.R')
 
 
 # Install and load multiple R packages necessary for analysis.
-pkgs <- c('dplyr', 
+pkgs <- c('dplyr', 'plyr',
           'lme4', 'lmerTest', 'sjstats',
           'effects', 'emmeans', 'car', 'MuMIn',
           'ggplot2', 'viridis', 'sjPlot')
@@ -59,7 +59,7 @@ corr_box <- ggplot(Corrects,
   stat_summary(fun.data = data_summary, color = 'black', shape = 23, 
                fill='black', size = .3) +
   
-  labs(x = 'Trial Type', 
+  labs(x = 'Trial type', 
        y = expression(bold('Mean RT (ms)'))) + 
   
   theme_classic() +
@@ -89,7 +89,7 @@ corr_box <- ggplot(Corrects,
 
 
 # --- SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3a.pdf', 
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3a.pdf', 
           corr_box, base_height = 5, base_width = 3.5)
 
 
@@ -135,7 +135,7 @@ rug(Corrects$M_RT)
 # --- FULL MODEL with interactions, controlling for
 # --- overall number of errors
 mod_full <- lmer(data = Corrects, 
-                 M_RT ~ Interest + Tot_Errors + 
+                 M_RT ~ Motivation + Tot_Errors + 
                    Group*Flankers*Affiliation + 
                    Group*Flankers*Agency + (1|ID), 
                  REML = F)
@@ -149,7 +149,7 @@ c_rm <- stdResid(data = Corrects, model = mod_full, plot = T,
 
 # --- Re-fit without outliers
 mod_full_1 <- lmer(data = filter(c_rm, Outlier == 0), 
-                   M_RT ~ Interest + Tot_Errors + 
+                   M_RT ~ Motivation + Tot_Errors + 
                      Group*Flankers*Affiliation + 
                      Group*Flankers*Agency + (1|ID), 
                    REML = F)
@@ -159,7 +159,7 @@ anova(mod_full_1)
 # ------ 5) SET UP and FIT the reported models ------------------
 # --- MODEL including personality variables
 mod_corrects <- lmer(data = Corrects, 
-                     M_RT ~ Tot_Errors + Interest + 
+                     M_RT ~ Tot_Errors + Motivation + 
                        Group + Flankers + Affiliation + Agency + (1|ID), 
                      REML = F)
 anova(mod_corrects)
@@ -172,7 +172,7 @@ c_rm <- stdResid(data = Corrects, model = mod_corrects, plot = T,
                  ylab = 'Std. Pearson Residuals', show.bound = T)
 
 # --- Re-fit without outliers
-mod_corrects_1 <- lmer(data = filter(c_rm, Outlier == 0), M_RT ~ Tot_Errors + Interest + 
+mod_corrects_1 <- lmer(data = filter(c_rm, Outlier == 0), M_RT ~ Tot_Errors + Motivation + 
                          Group + Flankers + Affiliation + Agency + (1|ID), REML = F)
 anova(mod_corrects_1)
 summary(mod_corrects_1)
@@ -213,10 +213,11 @@ summary(rt_grid, infer = T)
 
 # -- Save trial type estimates
 rt_flank <- emmeans(mod_corrects_1, pairwise ~ Flankers, 
-                    adjust = 'bonferroni', 
+                    adjust = 'fdr', 
                     lmer.df = 'satterthwaite')
 
 # --- Estimated marginal means for trail type
+rt_flank
 as.data.frame(rt_flank$contrasts)
 
 # --- Compute CIs
@@ -226,7 +227,7 @@ confint(rt_flank)
 # --- Save group estimates
 rt_group <- emmeans(mod_corrects_1, pairwise ~ Group, 
                     type = 'response', 
-                    adjust = 'bonferroni')
+                    adjust = 'fdr')
 
 # --- Estimated marginal means for group
 rt_group
@@ -259,7 +260,7 @@ corr_p <- ggplot(data = as.data.frame(rt_flank$emmeans),
   geom_linerange(aes(ymin = emmean-SE, ymax = emmean+SE), color = 'gray',
                  size = 3) + 
   geom_point(shape = 18, size = 3.5, color = 'black') +
-  labs(y = expression(bold('Estimated Mean RT (ms)')), x = 'Trial Type') +
+  labs(y = expression(bold('Estimated mean RT (ms)')), x = 'Trial type') +
   
   theme_classic() + 
   
@@ -287,38 +288,48 @@ corr_p <- ggplot(data = as.data.frame(rt_flank$emmeans),
         legend.position = 'none'); corr_p
 
 # --- SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3b.pdf', 
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3b.pdf', 
           corr_p, base_height = 5, base_width = 2.5)
 
 
 # --- Effect of Number of Errors 
-dat_I <- filter(c_rm, Outlier == 0)
-dat_I$pred <- predict(mod_corrects_1)
+dat_p <- filter(c_rm, Outlier == 0)
+dat_p$pred <- predict(mod_corrects_1)
 
-corr_err <- ggplot(dat_I, aes(x = Tot_Errors, y = pred, color=Flankers)) +
-  
-  annotate('text', x = -10, y = 450,
-           label = 'paste(italic(ß), \' = -1.4***\')', parse = TRUE, size = 5) +
-  
-  geom_point(size = 1, alpha = .7) +
-  
-  geom_smooth(method='glm', color = 'black', fill='black', alpha = .2) +
-  
-  coord_cartesian(ylim = c(150, 450), xlim = c(-25, 50))  +
+dat_I <- allEffects(mod_corrects_1, xlevels = 20)
+plot(dat_I, ylim = c(100, 400))
+dat_I <- as.data.frame(dat_I[[1]])
 
-  theme_classic() +
+
+rt_err <- ggplot(dat_p, 
+                  aes(x = Tot_Errors, y = M_RT, group = interaction(Subject, Flankers), color = Flankers)) +
+
+  stat_summary(fun.y = mean, geom = 'point', size = 1, shape = 16,
+               position = position_dodge(.5)) +
+  
+  geom_ribbon(data = dat_I,
+              aes(ymin = lower, ymax = upper, x = Tot_Errors), 
+              alpha = .2, inherit.aes = F, fill = 'black') +
+  geom_line(data = dat_I, 
+            aes(x = Tot_Errors, y = fit), 
+            inherit.aes = F, size = 0.8, color = 'black') +
+  
+  coord_cartesian( ylim = c(150, 450)) +
+  
   scale_color_viridis(option = 'B', end = .90,
-                     discrete = T) +
-
-  scale_x_continuous(breaks = c(-25, 0, 25, 50)) +
-  scale_y_continuous(breaks = c(150, 250, 350, 450)) +
-
+                      discrete = T) +
+  
+  theme_classic() + 
+  
+  scale_x_continuous(breaks = c(-20, 0, 20, 40, 60)) +
+  scale_y_continuous(breaks = c(150, 250, 350, 450)) + 
+  
   geom_segment(aes(x = -Inf, y = 150, xend = -Inf, yend = 450),
                color='black', size=rel(1)) +
-  geom_segment(aes(x = -25, y = -Inf, xend = 50, yend = -Inf),
+  geom_segment(aes(x = -20, y = -Inf, xend = 60, yend = -Inf),
                color='black', size=rel(1)) +
   
-  labs(x = expression(bold('N Errors ' ['centred'])), 
+  labs(x = expression(bold('Num. of errors ' ['centred'])), 
        y = expression(bold('Mean RT (ms)'))) +
   
   theme(axis.line = element_blank(),
@@ -330,32 +341,45 @@ corr_err <- ggplot(dat_I, aes(x = Tot_Errors, y = pred, color=Flankers)) +
                                     margin = margin(t = 15)),
         axis.title.y = element_text(size = 14, face = 'bold', 
                                     margin = margin(r = 15)),
-        legend.position = 'none'); corr_err
+        legend.position = 'none'); rt_err
 
-# --- SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3c.pdf', 
-          corr_err, base_height = 5, base_width = 4)
+rt_err <- rt_err + annotate('text', x = 10, y = 100,
+                              label = expression(paste(beta, ' = -1.4***')), 
+                              parse = TRUE, 
+                              size = 5, hjust = 0)
+
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3c.pdf', 
+                   rt_err, base_height = 4.5, base_width = 4)
 
 
 # --- Effect of ∆Motivation
-int_eff <- ggplot(dat_I, aes(x = Interest, y = pred, color=Flankers)) +
-  
-  annotate('text', x = -7, y = 450,
-           label = 'paste(italic(ß), \' = 2.1*\')', parse = TRUE, size = 5) +
-  
-  geom_point(size = 1, alpha = .7) +
-  
-  geom_smooth(method='glm', color = 'black', fill='black', alpha = .2) +
-  
-  coord_cartesian(ylim = c(150, 450), xlim = c(-10, 10))  +
+dat_I <- allEffects(mod_corrects_1, xlevels = 20)
+dat_I <- as.data.frame(dat_I[[2]])
 
-  theme_classic() +
+
+rt_mot <- ggplot(dat_p, 
+                 aes(x = Motivation, y = M_RT, group = interaction(Subject, Flankers), color = Flankers)) +
+  
+  stat_summary(fun.y = mean, geom = 'point', size = 1, shape = 16,
+               position = position_dodge(.5)) +
+  
+  geom_ribbon(data = dat_I,
+              aes(ymin = lower, ymax = upper, x = Motivation), 
+              alpha = .2, inherit.aes = F, fill = 'black') +
+  geom_line(data = dat_I, 
+            aes(x = Motivation, y = fit), 
+            inherit.aes = F, size = 0.8, color = 'black') +
+  
+  coord_cartesian( ylim = c(150, 450)) +
+  
   scale_color_viridis(option = 'B', end = .90,
-                     discrete = T) +
-
+                      discrete = T) +
+  
+  theme_classic() + 
+  
   scale_x_continuous(breaks = c(-10, -5, 0, 5, 10)) +
-  scale_y_continuous(breaks = c(150, 250, 350, 450)) +
-
+  scale_y_continuous(breaks = c(150, 250, 350, 450)) + 
+  
   geom_segment(aes(x = -Inf, y = 150, xend = -Inf, yend = 450),
                color='black', size=rel(1)) +
   geom_segment(aes(x = -10, y = -Inf, xend = 10, yend = -Inf),
@@ -373,10 +397,13 @@ int_eff <- ggplot(dat_I, aes(x = Interest, y = pred, color=Flankers)) +
                                     margin = margin(t = 15)),
         axis.title.y = element_text(size = 14, face = 'bold', 
                                     margin = margin(r = 15)),
-        legend.position = 'none'); int_eff
+        legend.position = 'none'); rt_mot
 
+rt_mot <- rt_mot + annotate('text', x = -2.5, y = 150,
+                            label = expression(paste(beta, ' = 2.1*')), 
+                            parse = TRUE, 
+                            size = 5, hjust = 0)
 
-# --- SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3d.pdf', 
-          int_eff, base_height = 5, base_width = 4)
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3d.pdf', 
+                   rt_mot, base_height = 4.5, base_width = 4)
 
