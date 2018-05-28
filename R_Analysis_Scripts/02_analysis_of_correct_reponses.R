@@ -302,8 +302,7 @@ dat_I <- as.data.frame(dat_I[[1]])
 
 
 rt_err <- ggplot(dat_p, 
-                  aes(x = Tot_Errors, y = M_RT, 
-                      group = interaction(Subject, Flankers), color = Flankers)) +
+                  aes(x = Tot_Errors, y = M_RT, group = interaction(Subject, Flankers), color = Flankers)) +
 
   stat_summary(fun.y = mean, geom = 'point', size = 1, shape = 16,
                position = position_dodge(.5)) +
@@ -344,7 +343,7 @@ rt_err <- ggplot(dat_p,
                                     margin = margin(r = 15)),
         legend.position = 'none'); rt_err
 
-rt_err <- rt_err + annotate('text', x = 10, y = 100,
+rt_err <- rt_err + annotate('text', x = 10, y = 150,
                               label = expression(paste(beta, ' = -1.4***')), 
                               parse = TRUE, 
                               size = 5, hjust = 0)
@@ -359,8 +358,8 @@ dat_I <- as.data.frame(dat_I[[2]])
 
 
 rt_mot <- ggplot(dat_p, 
-                 aes(x = Motivation, y = M_RT, 
-                     group = interaction(Subject, Flankers), color = Flankers)) +
+                 aes(x = Motivation, y = M_RT, group = interaction(Subject, Flankers), 
+                     color = Flankers)) +
   
   stat_summary(fun.y = mean, geom = 'point', size = 1, shape = 16,
                position = position_dodge(.5)) +
