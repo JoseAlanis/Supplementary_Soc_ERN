@@ -1,5 +1,5 @@
 ##### ##### #####     Analysis scrips for Alanis et al., 2018   ##### ##### #####
-#                           LMER models for physiological
+#                           LMER models for ERN and CRN
 #                                     data
 
 # Get helper functions
@@ -10,32 +10,41 @@ source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/stdResid.R')
 pkgs <- c('dplyr', 'reshape2',
           'lme4', 'lmerTest',
           'effects', 'emmeans', 'car', 'MuMIn',
-          'ggplot2', 'viridis')
+          'ggplot2', 'viridis', 'sjPlot')
 
 getPacks(pkgs)
 rm(pkgs)
 
-# ------ READ in the data -------------------------------------------
-load('~/Documents/Experiments/soc_ftask/data_for_r/Phys_Data.RData')
+# ------ 1) READ IN THE DATA -------------------------------------------
+load('~/Documents/Experiments/soc_ftask/data_for_r/Incomp_ERPs.RData')
 
-# ------ 1) Select relevant observations ----------------------------
-# Incompatible trials, electrode CZ and Fz and
-# time window 0 to 100 ms after response
-Phys <- filter(Phys, Flankers == 'Incompatible')
-Phys <- filter(Phys, Electrode == 'Cz' | Electrode == 'FCz')
-
-ERN_CRN <- filter(Phys, Time >= 0 & Time <= 100)
+# ------ 2) Select relevant observations ----------------------------
+# --- Keep electrode CZ and FCz;
+# --- time window 0 to 100 ms after response
+ERN_CRN <- filter(ERP, Electrode == 'Cz' | Electrode == 'FCz')
+ERN_CRN <- filter(ERN_CRN, Time >= 0 & Time <= 100)
 
 # ### Descriptive statistics
-ERN_CRN %>% group_by(Reaction) %>% summarise(M = mean(Amp), 
-                                         SD = sd(Amp), 
-                                         SE = sd(Amp) / sqrt(sum(!is.na(Amp))))
+ERN_CRN %>% group_by(Reaction) %>% 
+  dplyr::summarise(M = mean(Amplitude), 
+                   SD = sd(Amplitude), 
+                   SE = sd(Amplitude) / sqrt(sum(!is.na(Amplitude))))
 
-ERN_CRN %>% summarise(M = mean(Affiliation), 
-                          SD = sd(Affiliation))
+ERN_CRN %>% group_by(Reaction, Group) %>%  
+  dplyr::summarise(M = mean(Amplitude), 
+                   SD = sd(Amplitude), 
+                   SE = sd(Amplitude) / sqrt(sum(!is.na(Amplitude))))
 
-ERN_CRN %>% summarise(M = mean(Agency), 
-                      SD = sd(Agency))
+unique(select(ERN_CRN, Subject, Affiliation)) %>% 
+  dplyr::summarise(M = mean(Affiliation), 
+                   SD = sd(Affiliation))
+
+unique(select(ERN_CRN, Subject, Agency)) %>% 
+  dplyr::summarise(M = mean(Agency), 
+                   SD = sd(Agency))
+
+ERN_CRN %>% dplyr::summarise(M = mean(Total_Errors), 
+                             SD = sd(Total_Errors))
 
 
 # DUMMY CODE electrode variable
@@ -43,125 +52,543 @@ ERN_CRN$Electrode <- factor(ERN_CRN$Electrode)
 contrasts(ERN_CRN$Electrode) <- contr.sum(2); contrasts(ERN_CRN$Electrode)
 contrasts(ERN_CRN$Group) <- contr.sum(2); contrasts(ERN_CRN$Group)
 
-ERN_CRN$Reaction <- factor(ERN_CRN$Reaction, levels = c("Incorrect", "Correct"))
+ERN_CRN$Reaction <- factor(ERN_CRN$Reaction, levels = c('Incorrect', 'Correct'))
 contrasts(ERN_CRN$Reaction) <- contr.sum(2); contrasts(ERN_CRN$Reaction)
 
-contrasts(ERN_CRN$Group) <- contr.treatment(2, base=2); contrasts(ERN_CRN$Group)
-contrasts(ERN_CRN$Reaction) <- contr.treatment(2, base=1); contrasts(ERN_CRN$Reaction)
+
+# --- Mean center number of errors
+ERN_CRN <- within( ERN_CRN, {
+  Tot_Errors <- Total_Errors - mean(Total_Errors, na.rm = T)
+})
 
 
-# SET UP AND FIT full model
+# --- SET UP AND FIT full model with
+# --- interactions and control variables
 mod_rns_full <- lmer(data = ERN_CRN, 
-                     Amp ~ Total_Errors + Interest + 
+                     Amplitude ~ Tot_Errors + Motivation + 
                        Reaction*Group*Affiliation + Reaction*Group*Agency + 
-                       (1+Reaction|Subject))
+                       (1|Subject/Reaction), REML = F)
 anova(mod_rns_full)
+summary(mod_rns_full)
+qqPlot(resid(mod_rns_full))
 
 
-# SET UP AND FIT the reported model
+# --- Find outliers
+ERN_CRN_rm <- stdResid(data = ERN_CRN, mod_rns_full, 
+                       return.data = T, plot = T, 
+                       show.bound = T)
+
+# --- Re-fit without outliers
+mod_rns_full_1 <- lmer(data = filter(ERN_CRN_rm, Outlier == 0), 
+                     Amplitude ~ Tot_Errors + Motivation + 
+                       Reaction*Group*Affiliation + Reaction*Group*Agency + 
+                       (1|Subject/Reaction), REML = F)
+anova(mod_rns_full_1)
+summary(mod_rns_full_1)
+qqPlot(resid(mod_rns_full_1))
+
+
+# Coefficent of deteminations
+# R2m = only fixed effects, R2c = with random effects
+r.squaredGLMM(mod_rns_full_1)
+
+
+# --- SET UP AND FIT parsimonious model
 mod_ern <- lmer(data = ERN_CRN, 
-                Amp ~ Interest + 
-                  Reaction*Affiliation + Reaction*Group*Agency + 
-                  (1+Reaction|Subject))
+                Amplitude ~ Motivation + 
+                  Reaction*Group*Affiliation + Reaction*Group*Agency + 
+                  (1|Subject/Reaction), REML = F)
 anova(mod_ern)
 summary(mod_ern)
 qqPlot(resid(mod_ern, 'pearson'))
 
 
-# Find outliers
+# --- Find outliers
 ERN_CRN_rm <- stdResid(data = ERN_CRN, mod_ern, 
                       return.data = T, plot = T, 
-                      show.loess = T, show.bound = T)
+                      show.bound = T)
 
-# re-fit without outliers
+# --- Re-fit without outliers
 mod_ern_1 <- lmer(data = filter(ERN_CRN_rm, Outlier == 0), 
-                  Amp ~ Interest + 
+                  Amplitude ~ Motivation + 
                     Reaction*Group*Affiliation + Reaction*Group*Agency + 
-                    (1+Reaction|Subject))
+                    (1|Subject/Reaction), REML = F)
 anova(mod_ern_1)
 summary(mod_ern_1)
 qqPlot(resid(mod_ern_1, 'pearson'))
 
+
+# Compare models with and with-out 
+# scores in control variables
+anova(mod_rns_full, mod_ern)
+
+# Coefficent of deteminations
+# R2m = only fixed effects, R2c = with random effects
 r.squaredGLMM(mod_ern_1)
 
-visreg::visreg(mod_ern, 'Reaction', by='Group', partial = F,  ylim =c(8, -8))
-visreg::visreg(mod_ern, 'Affiliation', by='Reaction', partial=F, ylim =c(8, -8), overlay=T)
-visreg::visreg(mod_ern, 'Agency', by = 'Group', partial=F, ylim =c(8, -8), cond=list(Reaction = 'Incorrect'))
-visreg::visreg(mod_ern, 'Agency', by = 'Group', partial=F, ylim =c(8, -8), cond=list(Reaction = 'Correct'))
 
-# ------ Follow-up analyses model ∆ERN by group ---------------------
-emm_options(pbkrtest.limit = 1000)
+# Build table
+sjPlot::sjt.lmer(mod_rns_full_1, mod_ern_1, cell.spacing = 0.1,
+                 show.aic = TRUE, p.numeric = FALSE,
+                 string.est = 'Estimate',
+                 string.ci = 'Conf. Int.',
+                 string.p = 'p-value',
+                 depvar.labels = c('Amplitude', 
+                                   'Amplitude'),
+                 pred.labels = c('N Errors', '∆Motivation',
+                                 'Error', 'Competition', 
+                                 'Affiliation', 'Agency',
+                                 'Error x Competition',
+                                 'Error x Affiliation',
+                                 'Competition x Affiliation',
+                                 'Error x Agency',
+                                 'Competition x Agency',
+                                 'Error x Competition x Affiliation',
+                                 'Error x Competition x Agency') )
+
+
+# ------ 3) Follow-up analyses model ∆ERN by group ------------------
+emm_options(lmerTest.limit = 8000)
 summary(ref_grid(mod_ern_1), infer=T)
 
-
+# ----- GROUP ESTIMATES --- ************
 # Save group estimates
 group_means <- emmeans(mod_ern_1, 
-                       pairwise ~ Group)
+                       pairwise ~ Reaction | Group, 
+                       lmer.df = 'satterthwaite', adjust='fdr')
+
+# Group by reaction estimates
+group_means <- emmeans(mod_ern_1,
+                       pairwise ~ Group | Reaction,
+                       lmer.df = 'satterthwaite', adjust='fdr')
 
 # Effect of group
-as.data.frame(group_means$emmeans)
-group_means$contrasts
+as.data.frame(group_means$contrasts)
+group_means
 # Compute CIs
-mutate(as.data.frame(group_means$contrasts), 
-       LCL = estimate - SE * 1.96, 
-       UCL = estimate + SE * 1.96)
-
+confint(group_means)
 
 # Save reaction estimates
 reaction_means <- emmeans(mod_ern_1, 
-                          pairwise ~ Reaction)
+                          pairwise ~ Reaction, 
+                          lmer.df = 'satterthwaite',
+                          adjust = 'fdr')
 
-# Effect of group
-as.data.frame(reaction_means$emmeans)
-reaction_means$contrasts
+# Effect of reaction
+reaction_means
+as.data.frame(reaction_means$contrasts)
 # Compute CIs
-mutate(as.data.frame(reaction_means$contrasts), 
-       LCL = estimate - SE * 1.96, 
-       UCL = estimate + SE * 1.96)
+confint(reaction_means)
 
 
+
+
+# ----- REACTION ESTIMATES --- ************
 # Save reaction estimates by group
 reaction_means <- emmeans(mod_ern_1, 
-                          pairwise ~ Reaction | Group); reaction_means
+                          pairwise ~ Reaction | Group, 
+                          lmer.df = 'satterthwaite', 
+                          adjust = 'fdr'); reaction_means
 
 reaction_means <- emmeans(mod_ern_1, 
-                          pairwise ~ Group | Reaction); reaction_means
+                          pairwise ~ Group | Reaction, 
+                          lmer.df = 'satterthwaite',
+                          adjust = 'fdr'); reaction_means
 
-# Effect of group
+# Effect of reaction
 as.data.frame(reaction_means$emmeans)
 reaction_means$contrasts
 # Compute CIs
-mutate(as.data.frame(reaction_means$contrasts), 
-       LCL = estimate - SE * 1.96, 
-       UCL = estimate + SE * 1.96)
+confint(reaction_means)
 
 
 
-# Effects of affiliation
+# ----- AFFILIATION ESTIMATES --- ************
 # overall
 emtrends(mod_ern_1, var = 'Affiliation', ~ 1)
 
 # by reaction
-emtrends(mod_ern_1, var = 'Affiliation', pairwise ~ Reaction)
+emtrends(mod_ern_1, var = 'Affiliation', 
+         pairwise ~ Reaction, 
+         lmer.df = 'satterthwaite', adjust = 'fdr')
+
+# by reaction by group
+emtrends(mod_ern_1, var = 'Affiliation', 
+         pairwise ~ Reaction | Group, 
+         lmer.df = 'satterthwaite', adjust = 'fdr')
 
 # emmeans at +1 SD aff and -1 SD aff
-slope_aff <- ref_grid(mod_ern_1, at = list(Affiliation = c(-3.7,3.7)))
-aff_means <- emmeans(slope_aff, pairwise ~ Reaction | Affiliation)
-# Compute CIs
-mutate(as.data.frame(aff_means$contrasts), 
-       LCL = estimate - SE * 1.96, 
-       UCL = estimate + SE * 1.96)
+aff_react_group <- emmeans(mod_ern_1, 
+                           pairwise ~ Reaction | Affiliation, 
+                           at = list(Affiliation = c(-4, 4)), 
+                           lmer.df = 'satterthwaite', adjust = 'fdr')
 
-# Effect of agency
-# overall
-emtrends(mod_ern_1, var = 'Agency', ~ 1)
+# Summary
+aff_react_group
+as.data.frame(aff_react_group$contrasts)
+# CIs
+confint(aff_react_group)
 
-emtrends(mod_ern_1, var = 'Agency', pairwise ~ Group | Reaction)
 
-# emmeans at +1 SD aff and -1 SD aff
-slope_ag <- ref_grid(mod_ern_1, at = list(Agency = c(-26, 26)))
-ag_means <- emmeans(slope_ag, pairwise ~ Reaction | Agency)
-# Compute CIs
-mutate(as.data.frame(ag_means$contrasts), 
-       LCL = estimate - SE * 1.96, 
-       UCL = estimate + SE * 1.96)
+
+# ----- AGENCY ESTIMATES --- ************
+# --- overall
+emtrends(mod_ern_1, var = 'Agency', ~ 1,
+         lmer.df = 'satterthwaite', adjust = 'fdr')
+
+# by reaction by group
+emtrends(mod_ern_1, var = 'Agency', 
+         pairwise ~ Reaction | Group, 
+         lmer.df = 'satterthwaite', adjust = 'fdr')
+
+# emmeans at +1 SD aff and -1 SD agency
+ag_react_group <- emmeans(mod_ern_1, 
+                           pairwise ~ Reaction | Group * Agency, 
+                           at = list(Agency = c(-14, 14)), 
+                           lmer.df = 'satterthwaite', adjust = 'fdr')
+
+# Summary
+ag_react_group
+as.data.frame(ag_react_group$contrasts)
+# --- CIs
+confint(ag_react_group)
+
+
+
+# # ----- Refit for simple slopes of agency ***********
+# --- ERN in Competiton
+contrasts(ERN_CRN_rm$Reaction) <- contr.treatment(2, base = 1)
+contrasts(ERN_CRN_rm$Reaction)
+
+contrasts(ERN_CRN_rm$Group) <- contr.treatment(2, base = 1)
+contrasts(ERN_CRN_rm$Group)
+
+mod_ern_1 <- lmer(data = filter(ERN_CRN_rm, Outlier == 0),
+                  Amplitude ~ Motivation +
+                    Reaction*Group*Affiliation + Reaction*Group*Agency +
+                    (1|Subject/Reaction), REML = F)
+summary(mod_ern_1)
+
+# --- CRN in Competiton
+contrasts(ERN_CRN_rm$Reaction) <- contr.treatment(2, base = 2)
+contrasts(ERN_CRN_rm$Reaction)
+
+contrasts(ERN_CRN_rm$Group) <- contr.treatment(2, base = 1)
+contrasts(ERN_CRN_rm$Group)
+
+mod_ern_1 <- lmer(data = filter(ERN_CRN_rm, Outlier == 0),
+                  Amplitude ~ Motivation +
+                    Reaction*Group*Affiliation + Reaction*Group*Agency +
+                    (1|Subject/Reaction), REML = F)
+summary(mod_ern_1)
+
+# --- ERN in Cooperation
+contrasts(ERN_CRN_rm$Reaction) <- contr.treatment(2, base = 1)
+contrasts(ERN_CRN_rm$Reaction)
+
+contrasts(ERN_CRN_rm$Group) <- contr.treatment(2, base = 2)
+contrasts(ERN_CRN_rm$Group)
+
+mod_ern_1 <- lmer(data = filter(ERN_CRN_rm, Outlier == 0),
+                  Amplitude ~ Motivation +
+                    Reaction*Group*Affiliation + Reaction*Group*Agency +
+                    (1|Subject/Reaction), REML = F)
+summary(mod_ern_1)
+
+
+# --- CRN in Cooperation
+contrasts(ERN_CRN_rm$Reaction) <- contr.treatment(2, base = 2)
+contrasts(ERN_CRN_rm$Reaction)
+
+contrasts(ERN_CRN_rm$Group) <- contr.treatment(2, base = 2)
+contrasts(ERN_CRN_rm$Group)
+
+mod_ern_1 <- lmer(data = filter(ERN_CRN_rm, Outlier == 0),
+                  Amplitude ~ Motivation +
+                    Reaction*Group*Affiliation + Reaction*Group*Agency +
+                    (1|Subject/Reaction), REML = F)
+summary(mod_ern_1)
+
+
+
+# ------ 4) PLOT Simple Slopes of Affiliation -----------------------
+
+# --- Get effects of affiliation
+dat_I <- allEffects(mod_ern_1, xlevels = 20)
+# --- Quick plot
+plot(dat_I, ylim = c(10, -10))
+
+# --- Prepare data for plot
+dat_I <- as.data.frame(dat_I[[2]])
+dat_p <-filter(ERN_CRN_rm, Outlier == 0)
+levels(dat_I$Reaction) <- c('CRN', 'ERN', NA)
+levels(dat_p$Reaction) <- c('ERN', 'CRN', NA)
+
+
+# --- Create Plot - ERN as a function of Affilaition by Group
+ern_aff <- ggplot(filter(dat_p, Reaction == 'ERN'), 
+                  aes(x = Affiliation, y = Amplitude, 
+                      group = Subject, color = Group)) +
+  
+  stat_summary(fun.y = mean, geom = 'point', 
+               size = 1, shape = 16, position = position_dodge(1)) +
+  
+  facet_wrap(~ Reaction) +
+  
+  geom_ribbon(data = filter(dat_I, Reaction == 'ERN'),
+              aes(ymin = lower, ymax = upper, x = Affiliation, fill = Group), 
+              alpha = .2, inherit.aes = F) +
+  geom_line(data = filter(dat_I, Reaction == 'ERN'), 
+            aes(x = Affiliation, y = fit, color = Group, linetype = Group), 
+            inherit.aes = F, size = 0.8) +
+  
+  scale_y_reverse(breaks = c(10, 5, 0, -5, -10)) + 
+  coord_cartesian( ylim = c(10, -10)) +
+  
+  scale_color_viridis(option = 'A', discrete = T, 
+                      direction = -1, begin = .05, end = .6) +
+  scale_fill_viridis(option = 'A', discrete = T, 
+                     direction = -1, begin = .05, end = .6) +
+  
+  theme_classic() + 
+  scale_x_continuous(breaks = c(-12, -6, 0, 6)) + 
+  
+  geom_segment(aes(x = -Inf, y = 10, xend = -Inf, yend = -10), 
+               color = 'black', size = rel(1)) +
+  geom_segment(aes(x = -12, y = Inf, xend = 6, yend = Inf), 
+               color = 'black', size = rel(1)) +
+  
+  labs(x = expression(bold('Affiliation' [' centred'])), 
+       y = expression(bold(paste('Estimated amplitdue (', mu, 'V)')))) +
+  
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = 14, color = 'black', face = 'bold'),
+        axis.line = element_blank(),
+        axis.ticks = element_line(size = rel(1.1)),
+        axis.ticks.length = unit(.1, 'cm'),
+        axis.text.x = element_text(size = 13, color = 'black'),
+        axis.text.y = element_text(size = 13, color = 'black'),
+        axis.title.x = element_text(size = 14, face = 'bold', 
+                                    margin = margin(t = 15)),
+        axis.title.y = element_text(size = 14, face = 'bold', 
+                                    margin = margin(r = 15)),
+        legend.position = 'bottom', legend.key.width = unit(1, 'cm'),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 12))
+
+ern_aff <- ern_aff + annotate('text', x = -10.5, y = 10,
+                              label = expression(paste(beta [comp], ' = -0.26    ', 
+                                                       beta [coop], ' = -0.03')), 
+                              parse = TRUE, 
+                              size = 5, hjust = 0)
+
+
+# --- SAVE PLOT
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_8a.pdf', 
+                   ern_aff, base_height = 5, base_width = 4.5)
+
+
+
+
+# --- Create Plot - CRN as a function of Affilaition by Group
+crn_aff <- ggplot(filter(dat_p, Reaction == 'CRN'), 
+                  aes(x = Affiliation, y = Amplitude, group = Subject, color = Group)) +
+  
+  stat_summary(fun.y = mean, geom = 'point', size = 1, shape = 16, position = position_dodge(1)) +
+  
+  facet_wrap(~ Reaction) +
+  
+  geom_ribbon(data = filter(dat_I, Reaction == 'CRN'),
+              aes(ymin = lower, ymax = upper, x = Affiliation, fill = Group), 
+              alpha = .2, inherit.aes = F) +
+  geom_line(data = filter(dat_I, Reaction == 'CRN'), 
+            aes(x = Affiliation, y = fit, color = Group, linetype = Group), 
+            inherit.aes = F, size = 0.8) +
+  
+  scale_y_reverse(breaks = c(10, 5, 0, -5, -10)) + 
+  coord_cartesian( ylim = c(10, -10)) +
+  
+  scale_color_viridis(option = 'A', discrete = T, 
+                      direction = -1, begin = .05, end = .6) +
+  scale_fill_viridis(option = 'A', discrete = T, 
+                     direction = -1, begin = .05, end = .6) +
+  
+  theme_classic() + 
+  
+  scale_x_continuous(breaks = c(-12, -6, 0, 6)) + 
+  
+  geom_segment(aes(x = -Inf, y = 10, xend = -Inf, yend = -10), 
+               color = 'black', size = rel(1)) +
+  geom_segment(aes(x = -12, y = Inf, xend = 6, yend = Inf), 
+               color = 'black', size = rel(1)) +
+  
+  labs(x = expression(bold('Affiliation' [' centred'])), 
+       y = expression(bold(paste('Estimated amplitdue (', mu, 'V)')))) +
+  
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = 14, color = 'black', face = 'bold'),
+        axis.line = element_blank(),
+        axis.ticks = element_line(size = rel(1.1)),
+        axis.ticks.length = unit(.1, 'cm'),
+        axis.text.x = element_text(size = 13, color = 'black'),
+        axis.text.y = element_text(size = 13, color = 'black'),
+        axis.title.x = element_text(size = 14, face = 'bold', 
+                                    margin = margin(t = 15)),
+        axis.title.y = element_text(size = 14, face = 'bold', 
+                                    margin = margin(r = 15)),
+        legend.position = 'bottom', legend.key.width = unit(1, 'cm'),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 12))
+
+crn_aff <- crn_aff + annotate('text', x = -10.5, y = 10,
+                              label = expression(paste(beta [comp], ' = 0.12      ', 
+                                                       beta [coop], ' = 0.03')), 
+                              parse = TRUE, 
+                              size = 5, hjust = 0)
+
+# --- SAVE PLOT
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_8b.pdf', 
+                   crn_aff, base_height = 5, base_width = 4.5)
+
+
+
+# ------ 4) PLOT Simple Slopes of Agency ----------------------------
+# --- Get effects of affiliation
+dat_I <- allEffects(mod_ern_1, xlevels = 20)
+# --- Quick plot
+plot(dat_I, ylim = c(10, -10))
+
+# --- Prepare data for plot
+dat_I <- as.data.frame(dat_I[[3]])
+dat_p <-filter(ERN_CRN_rm, Outlier == 0)
+levels(dat_I$Reaction) <- c('CRN', 'ERN', NA)
+levels(dat_p$Reaction) <- c('ERN', 'CRN', NA)
+
+
+# --- Create Plot - ERN as a function of Agency by Group
+ern_ag <- ggplot(filter(dat_p, Reaction == 'ERN'), 
+                  aes(x = Agency, y = Amplitude, 
+                      group = Subject, color = Group)) +
+  
+  stat_summary(fun.y = mean, geom = 'point', 
+               size = 1, shape = 16, position = position_dodge(1)) +
+  
+  facet_wrap(~ Reaction) +
+  
+  geom_ribbon(data = filter(dat_I, Reaction == 'ERN'),
+              aes(ymin = lower, ymax = upper, x = Agency, fill = Group), 
+              alpha = .2, inherit.aes = F) +
+  geom_line(data = filter(dat_I, Reaction == 'ERN'), 
+            aes(x = Agency, y = fit, color = Group, linetype = Group), 
+            inherit.aes = F, size = 0.8) +
+  
+  scale_y_reverse(breaks = c(10, 5, 0, -5, -10)) + 
+  coord_cartesian( ylim = c(10, -10)) +
+  
+  scale_color_viridis(option = 'A', discrete = T, 
+                      direction = -1, begin = .05, end = .6) +
+  scale_fill_viridis(option = 'A', discrete = T, 
+                     direction = -1, begin = .05, end = .6) +
+  
+  theme_classic() + 
+  scale_x_continuous(breaks = c(-45, -30, -15, 0, 15, 30)) + 
+  
+  geom_segment(aes(x = -Inf, y = 10, xend = -Inf, yend = -10), 
+               color = 'black', size = rel(1)) +
+  geom_segment(aes(x = -45, y = Inf, xend = 30, yend = Inf), 
+               color = 'black', size = rel(1)) +
+  
+  labs(x = expression(bold('Agency' [' centred'])), 
+       y = expression(bold(paste('Estimated amplitdue (', mu, 'V)')))) +
+  
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = 14, color = 'black', face = 'bold'),
+        axis.line = element_blank(),
+        axis.ticks = element_line(size = rel(1.1)),
+        axis.ticks.length = unit(.1, 'cm'),
+        axis.text.x = element_text(size = 13, color = 'black'),
+        axis.text.y = element_text(size = 13, color = 'black'),
+        axis.title.x = element_text(size = 14, face = 'bold', 
+                                    margin = margin(t = 15)),
+        axis.title.y = element_text(size = 14, face = 'bold', 
+                                    margin = margin(r = 15)),
+        legend.position = 'bottom', legend.key.width = unit(1, 'cm'),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 12))
+
+ern_ag <- ern_ag + annotate('text', x = -40, y = 10,
+                              label = expression(paste(beta [comp], ' = 0.04        ', 
+                                                       beta [coop], ' = -0.06')), 
+                              parse = TRUE, 
+                              size = 5, hjust = 0)
+
+
+# --- SAVE PLOT
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_9a.pdf', 
+                   ern_ag, base_height = 5, base_width = 4.5)
+
+
+
+
+# --- Create Plot - CRN as a function of Affilaition by Group
+crn_ag <- ggplot(filter(dat_p, Reaction == 'CRN'), 
+                  aes(x = Agency, y = Amplitude, 
+                      group = Subject, color = Group)) +
+  
+  stat_summary(fun.y = mean, geom = 'point', size = 1, shape = 16, 
+               position = position_dodge(1)) +
+  
+  facet_wrap(~ Reaction) +
+  
+  geom_ribbon(data = filter(dat_I, Reaction == 'CRN'),
+              aes(ymin = lower, ymax = upper, x = Agency, fill = Group), 
+              alpha = .2, inherit.aes = F) +
+  geom_line(data = filter(dat_I, Reaction == 'CRN'), 
+            aes(x = Agency, y = fit, color = Group, linetype = Group), 
+            inherit.aes = F, size = 0.8) +
+  
+  scale_y_reverse(breaks = c(10, 5, 0, -5, -10)) + 
+  coord_cartesian( ylim = c(10, -10)) +
+  
+  scale_color_viridis(option = 'A', discrete = T, 
+                      direction = -1, begin = .05, end = .6) +
+  scale_fill_viridis(option = 'A', discrete = T, 
+                     direction = -1, begin = .05, end = .6) +
+  
+  theme_classic() + 
+  
+  scale_x_continuous(breaks = c(-45, -30, -15, 0, 15, 30)) + 
+  
+  geom_segment(aes(x = -Inf, y = 10, xend = -Inf, yend = -10), 
+               color = 'black', size = rel(1)) +
+  geom_segment(aes(x = -45, y = Inf, xend = 30, yend = Inf), 
+               color = 'black', size = rel(1)) +
+  
+  labs(x = expression(bold('Agency' [' centred'])), 
+       y = expression(bold(paste('Estimated amplitdue (', mu, 'V)')))) +
+  
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = 14, color = 'black', face = 'bold'),
+        axis.line = element_blank(),
+        axis.ticks = element_line(size = rel(1.1)),
+        axis.ticks.length = unit(.1, 'cm'),
+        axis.text.x = element_text(size = 13, color = 'black'),
+        axis.text.y = element_text(size = 13, color = 'black'),
+        axis.title.x = element_text(size = 14, face = 'bold', 
+                                    margin = margin(t = 15)),
+        axis.title.y = element_text(size = 14, face = 'bold', 
+                                    margin = margin(r = 15)),
+        legend.position = 'bottom', legend.key.width = unit(1, 'cm'),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 12))
+
+crn_ag <- crn_ag + annotate('text', x = -40, y = 10,
+                            label = expression(paste(beta [comp], ' = -0.03          ', 
+                                                     beta [coop], ' = 0')), 
+                            parse = TRUE, 
+                            size = 5, hjust = 0)
+
+
+# --- SAVE PLOT
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_9b.pdf', 
+                   crn_ag, base_height = 5, base_width = 4.5)
