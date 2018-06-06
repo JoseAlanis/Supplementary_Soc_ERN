@@ -30,15 +30,17 @@ PES <- within( PES, {
   Err_Amp <- Err_Amp - mean(Err_Amp, na.rm = T) 
 })
 
-# FIT the model
+# ----- 3) Fit the initial model ------
 mod_pes <- lmer(data = PES, pe_slowing ~ Motivation + PE_Flankers +  Agency + 
                   Err_Amp*Group*Affiliation +
                   (1|Subject), REML = F)
 anova(mod_pes)
 summary(mod_pes)
 
+# Indentify outliers
 pes_rm <- stdResid(data = PES, model = mod_pes, plot = T, show.bound = T)
 
+# Re-fit model without outliers
 mod_pes <- lmer(data = filter(pes_rm, Outlier == 0), pe_slowing ~ Motivation + 
                   PE_Flankers + Agency +
                   Err_Amp*Group*Affiliation + 
@@ -46,13 +48,15 @@ mod_pes <- lmer(data = filter(pes_rm, Outlier == 0), pe_slowing ~ Motivation +
 anova(mod_pes)
 summary(mod_pes)
 
-# ----- 3) Follow-up analyses ------
+# ----- 4) Follow-up analyses ---------
 emm_options(lmerTest.limit = 2000)
 
-# --- Effect of Group
+# Effect of Group
 group_est <- emmeans(mod_pes, pairwise ~ Group, 
                      adjust = 'fdr',
-                     at = list(Agency = 0, Affiliation = 0, Err_Amp = 0)); group_est
+                     at = list(Agency = 0, 
+                               Affiliation = 0, 
+                               Err_Amp = 0)); group_est
 # Compute CIs
 confint(group_est)
 # Plot results
@@ -72,13 +76,16 @@ emtrends(mod_pes, var = 'Agency', ~ 1, lmer.df = 'satterthwaite',
 # Effect of Affilaiton * ERN by Group 
 aff_group <- emmeans(mod_pes, pairwise ~ Err_Amp | Affiliation + Group , 
                      adjust = 'fdr',  
-                     at = list(Agency = 0, Affiliation = c(-4, 4), Err_Amp = c(-6.5, 2.5))); aff_group
+                     at = list(Agency = 0, 
+                               Affiliation = c(-4, 4), 
+                               Err_Amp = c(-6.5, 2.5))); aff_group
+# CIs
 confint(aff_group)
 
 
+# ----- 5) Plot effects ---------------
 
-
-
+# PES by ERN amplitude
 plot_pes1<- emmip(mod_pes, ~ Err_Amp, mult.name = "Group", cov.reduce = FALSE,
                   at = list(Err_Amp = c(-6.5, 2.5)),
                   CIs = T); plot_pes1
@@ -104,11 +111,12 @@ plot_pes1 <- plot_pes1 + coord_cartesian(ylim = c(0, 40)) +
            parse = TRUE, 
            size = 5, hjust = 0); plot_pes1
 
+# Save plot
 cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S1.pdf', 
                    plot_pes1,  base_height = 5, base_width = 4.5)
 
 
-
+# PES by ERN amplitude, affiliation and group
 plot_pes2 <- emmip(mod_pes, Affiliation ~ Err_Amp | Group, cov.reduce = FALSE, 
                    at = list(Affiliation = c(-4, 4), Err_Amp = c(-6.5, 2.5)), 
                    CIs = T); plot_pes2
@@ -135,6 +143,7 @@ plot_pes2 <- plot_pes2 + coord_cartesian(ylim = c(-20, 60)) +
         legend.text = element_text(color = 'black', size=12),
         legend.title = element_text(color = 'black', size = 12, face='bold')); plot_pes2
 
+# Save plot
 cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S2.pdf', 
                    plot_pes2,  base_height = 5, base_width = 9)
 
