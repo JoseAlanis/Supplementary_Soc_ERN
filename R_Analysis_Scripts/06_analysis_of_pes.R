@@ -31,7 +31,7 @@ PES <- within( PES, {
 })
 
 # ----- 3) Fit the initial model ------
-mod_pes <- lmer(data = PES, pe_slowing ~ Motivation + PE_Flankers +  Agency + 
+mod_pes <- lmer(data = PES, pe_slowing ~ Total_Errors + Motivation + PE_Flankers +  Agency + 
                   Err_Amp*Group*Affiliation +
                   (1|Subject), REML = F)
 anova(mod_pes)
@@ -41,7 +41,7 @@ summary(mod_pes)
 pes_rm <- stdResid(data = PES, model = mod_pes, plot = T, show.bound = T)
 
 # Re-fit model without outliers
-mod_pes <- lmer(data = filter(pes_rm, Outlier == 0), pe_slowing ~ Motivation + 
+mod_pes <- lmer(data = filter(pes_rm, Outlier == 0), pe_slowing ~ Total_Errors + Motivation + 
                   PE_Flankers + Agency +
                   Err_Amp*Group*Affiliation + 
                   (1|Subject), REML = F)
@@ -87,7 +87,8 @@ confint(aff_group)
 
 # PES by ERN amplitude
 plot_pes1<- emmip(mod_pes, ~ Err_Amp, mult.name = "Group", cov.reduce = FALSE,
-                  at = list(Err_Amp = c(-6.5, 2.5)),
+                  at = list(Err_Amp = c(-6.5, 2.5), Agency = 0, 
+                            Affiliation = 0),
                   CIs = T); plot_pes1
 
 plot_pes1 <- plot_pes1 + coord_cartesian(ylim = c(0, 40)) +
@@ -118,7 +119,7 @@ cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S1.pdf',
 
 # PES by ERN amplitude, affiliation and group
 plot_pes2 <- emmip(mod_pes, Affiliation ~ Err_Amp | Group, cov.reduce = FALSE, 
-                   at = list(Affiliation = c(-4, 4), Err_Amp = c(-6.5, 2.5)), 
+                   at = list(Affiliation = c(-4, 4), Err_Amp = c(-6.5, 2.5), Agency = 0), 
                    CIs = T); plot_pes2
 
 
