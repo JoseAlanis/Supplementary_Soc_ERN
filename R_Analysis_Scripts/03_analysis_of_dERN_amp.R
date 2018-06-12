@@ -51,7 +51,7 @@ ggplot(ERP[(ERP$Electrode == 'FCz') & ERP$Time > -500 , ],
 
 # ------ 3) COMPUTE ∆ERN wave incorrect-correct ---------------------
 # --- From long to wide
-data_wide <- dcast(ERP, Group + Subject + Agency + Affiliation + Interest + 
+data_wide <- dcast(ERP, Group + Subject + Agency + Affiliation + Motivation + 
                      Total_Errors + Electrode + Time ~ Reaction,
                    value.var = c('Amplitude'))
 # --- NAs created?
@@ -167,10 +167,10 @@ cz_fcz %>% group_by(Group) %>%
 
 # ***** ****** ******
 # --- SET UP AND FIT full model 
-# ---- controlling for ∆Motivation (interest)
+# ---- controlling for ∆Motivation
 # --- and number of errors
 mod_ern_full <- lmer(data = cz_fcz, 
-                     ERN ~ Tot_Errors + Interest + 
+                     ERN ~ Tot_Errors + Motivation + 
                        Group*Affiliation + Group*Agency + 
                        (1|Subject), REML = F)
 anova(mod_ern_full)
@@ -182,7 +182,7 @@ cz_fcz_rm <- stdResid(data = cz_fcz, mod_ern_full,
 
 # --- Re-fit without outliers
 mod_ern_full_1 <- lmer(data = filter(cz_fcz_rm, Outlier == 0), 
-                       ERN ~ Tot_Errors + Interest + 
+                       ERN ~ Tot_Errors + Motivation + 
                          Group*Affiliation + Group*Agency + 
                          (1|Subject), REML = F)
 anova(mod_ern_full_1)
