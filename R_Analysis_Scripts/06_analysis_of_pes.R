@@ -113,7 +113,7 @@ plot_pes1 <- plot_pes1 + coord_cartesian(ylim = c(0, 40)) +
            size = 5, hjust = 0); plot_pes1
 
 # Save plot
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S1.pdf', 
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S2.pdf', 
                    plot_pes1,  base_height = 5, base_width = 4.5)
 
 
@@ -145,7 +145,7 @@ plot_pes2 <- plot_pes2 + coord_cartesian(ylim = c(-20, 60)) +
         legend.title = element_text(color = 'black', size = 12, face='bold')); plot_pes2
 
 # Save plot
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S2.pdf', 
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S3.pdf', 
                    plot_pes2,  base_height = 5, base_width = 9)
 
 
