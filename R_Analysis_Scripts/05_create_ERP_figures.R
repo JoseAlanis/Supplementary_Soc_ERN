@@ -561,31 +561,31 @@ cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_6b.pdf',
 
 
 
-# ------ 5) Prepare data for plot -----------------------------------
-# Calculate charthesian coordiantes
-chanlocs$radianTheta <- pi/180*chanlocs$theta
-
-chanlocs <- chanlocs %>%
-  mutate(x = .$radius*sin(.$radianTheta),
-         y = .$radius*cos(.$radianTheta))
-
-to_p <- merge(Ave_ERP, select(chanlocs, x, y, Electrode), 'Electrode')
-to_p <- select(to_p, Electrode, x, y, Time, M_Amp, Reaction, Group)
-to_p <- filter(to_p, Time >= 0 & Time <= 100, Reaction == 'Correct', Group == 'Competition')
-names(to_p) <- gsub(names(to_p),
-                    pattern = '([[:upper:]])',
-                    perl = TRUE,
-                    replacement = '\\L\\1')
-names(to_p)[5] <- 'amplitude'
-
-# ------ 5) Plot Topographical Plot -----------------------------------
-t_plot  <- topoplot(to_p, contour = T, 
-                    chan_marker = 'none', 
-                    palette = 'B', limits = c(-8, 8), 
-                    grid_res = 100); t_plot
-
-
-
-# SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_7b.pdf', 
-          t_plot, base_height = 5, base_width = 6)
+# # ------ 5) Prepare data for plot -----------------------------------
+# # Calculate charthesian coordiantes
+# chanlocs$radianTheta <- pi/180*chanlocs$theta
+# 
+# chanlocs <- chanlocs %>%
+#   mutate(x = .$radius*sin(.$radianTheta),
+#          y = .$radius*cos(.$radianTheta))
+# 
+# to_p <- merge(Ave_ERP, select(chanlocs, x, y, Electrode), 'Electrode')
+# to_p <- select(to_p, Electrode, x, y, Time, M_Amp, Reaction, Group)
+# to_p <- filter(to_p, Time >= 0 & Time <= 100, Reaction == 'Correct', Group == 'Competition')
+# names(to_p) <- gsub(names(to_p),
+#                     pattern = '([[:upper:]])',
+#                     perl = TRUE,
+#                     replacement = '\\L\\1')
+# names(to_p)[5] <- 'amplitude'
+# 
+# # ------ 5) Plot Topographical Plot -----------------------------------
+# t_plot  <- topoplot(to_p, contour = T, 
+#                     chan_marker = 'none', 
+#                     palette = 'B', limits = c(-8, 8), 
+#                     grid_res = 100); t_plot
+# 
+# 
+# 
+# # SAVE PLOT
+# save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_7b.pdf', 
+#           t_plot, base_height = 5, base_width = 6)
