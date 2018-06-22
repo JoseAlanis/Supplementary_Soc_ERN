@@ -3,10 +3,10 @@
 #                                 error data
 
 # Get helper functions
-source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/getPacks.R')
-source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/stdResid.R')
-source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/overDisp.R')
-source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/data_summary.R')
+source('./R_Functions/getPacks.R')
+source('./R_Functions/stdResid.R')
+source('./R_Functions/overDisp.R')
+source('./R_Functions/data_summary.R')
 
 # Install and load multiple R packages necessary for analysis.
 pkgs <- c('dplyr', 'plyr',
@@ -154,6 +154,7 @@ mod_err_inter <- glmer(data = Errors,
                     N_Errors ~ Motivation + Flankers*Group + (1|ID),
                     family = poisson(link = 'log'),
                     control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
+# Anova table
 Anova(mod_err_inter, type = 'III')
 
 # ---- Compute resiudals and detect outliers
@@ -167,6 +168,7 @@ mod_err_inter_1 <- glmer(data = filter(er_rm, Outlier == 0),
                        N_Errors ~ Motivation + Flankers*Group + (1|ID),
                        family = poisson(link = 'log'),
                        control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
+# Anova table
 Anova(mod_err_inter_1, type = 'III')
 
 
@@ -176,9 +178,11 @@ mod_errors <- glmer(data = Errors,
                     N_Errors ~ Flankers + Group + (1|ID), 
                     family = poisson(link = 'log'),
                     control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
-Anova(mod_errors, type='III')
+# Anova table and coefficients
+Anova(mod_errors, type = 'III')
 summary(mod_errors)
-qqPlot(resid(mod_errors))
+# Residulas look good?
+qqPlot(resid(mod_errors)) # yes they do
 
 # Compute resiudals and detect outliers
 e_rm <- stdResid(data = Errors, model = mod_errors, plot = T, 
@@ -191,9 +195,11 @@ mod_errors_1 <- glmer(data = filter(e_rm, Outlier == 0),
                       N_Errors ~ Flankers + Group + (1|ID), 
                       family = poisson(link = 'log'), 
                       control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
-Anova(mod_errors_1, type='III')
+# Anova table and coefficients
+Anova(mod_errors_1, type = 'III')
 summary(mod_errors_1)
-qqPlot(resid(mod_errors_1))
+# Residuals look good?
+qqPlot(resid(mod_errors_1)) # yes they do
 
 
 # Coefficent of deteminations
