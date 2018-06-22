@@ -85,9 +85,9 @@ err_box <-  ggplot(Errors,
         legend.position = 'none'); err_box 
 
 
-# SAVE PLOT
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2a.pdf', 
-          err_box, base_height = 5, base_width = 3)
+# --- SAVE PLOT ---
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2a.pdf', 
+#           err_box, base_height = 5, base_width = 3)
 
 
 
@@ -301,9 +301,9 @@ err_p <- ggplot(data = as.data.frame(emmeans(mod_errors_1, ~ Flankers)),
         legend.position = 'none'); err_p
 
 
-# --- SAVE PLOT
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2b.pdf', 
-          err_p, base_height = 5, base_width = 2.5)
+# --- SAVE PLOT ---
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2b.pdf', 
+#           err_p, base_height = 5, base_width = 2.5)
 
 
 
@@ -320,12 +320,13 @@ mod_full_err_in <- glmer(data = Errors_In, N_Errors ~
                            Motivation + Group*Affiliation + Group*Agency + (1|ID),
                          family = poisson(link = 'log'),
                          control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
+# Anova table
 Anova(mod_full_err_in, type = 'III')
 
 # ----- Detect outlying observations
 Ini_rm <- stdResid(data = Errors_In, mod_full_err_in, 
                   return.data = T, plot = T, show.bound = T,
-                  main = expression('Residuals ' ['Poisson mod. for in. error data']), 
+                  main = expression('Residuals ' ['Poisson mod. for incomp. errors']), 
                   xlab = expression('Fitted Values ' ['N Errors']),
                   ylab = 'Std. Pearson Residuals')
 
@@ -334,6 +335,7 @@ mod_full_err_in_1 <- glmer(data = filter(Ini_rm, Outlier == 0), N_Errors ~
                              Motivation + Group*Affiliation + Group*Agency + (1|ID),
                            family = poisson(link = 'log'),
                            control = glmerControl(optimizer='bobyqa'), nAGQ = 20)
+# Anova table and coefficients
 Anova(mod_full_err_in_1, type = 'III')
 summary(mod_full_err_in_1)
 
@@ -344,15 +346,17 @@ mod_err_in <- glmer(data = Errors_In,
                     family = poisson(link = 'log'), 
                     control = glmerControl(optimizer = 'bobyqa'), 
                     nAGQ = 20)
+# Anova table and coefficients
 Anova(mod_err_in, type = 'III')
 summary(mod_err_in)
-qqPlot(resid(mod_err_in))
+# Residuals ok?
+qqPlot(resid(mod_err_in)) # yes
 
 # --- Detect outlying observations
 In_rm <- stdResid(data = Errors_In, mod_err_in, 
                   return.data = T, plot = T, 
                   show.loess = T, show.bound = T,
-                  main = expression('Residuals ' ['Poisson model for in. error data']), 
+                  main = expression('Residuals ' ['Poisson mod. for incomp. errors']), 
                   xlab = expression('Fitted Values ' ['N Errors']),
                   ylab = 'Std. Pearson Residuals')
 
@@ -362,9 +366,11 @@ mod_err_in_1 <- glmer(data = filter(In_rm, Outlier == 0),
                       family = poisson(link = 'log'), 
                       control = glmerControl(optimizer = 'bobyqa'), 
                       nAGQ = 20)
+# Anova table and coefficietns
 Anova(mod_err_in_1, type='III')
 summary(mod_err_in_1)
-qqPlot(resid(mod_err_in_1))
+# Residuasl ok?
+qqPlot(resid(mod_err_in_1)) # yes
 
 
 # Coefficent of deteminations
@@ -398,7 +404,7 @@ emm_trend_SC <- emtrends(mod_err_in_1,
          ~ 1)
 
 # --- Effects of Affiliation
-summary(emm_trend_SC, type = 'response')
+summary(emm_trend_SC)
 
 # --- Save Simple slopes of Agency
 emm_trend_MAE <- emtrends(mod_err_in_1, 
@@ -468,30 +474,40 @@ err_aff <- ggplot(dat_p,
         legend.title = element_blank(),
         legend.text = element_text(size = 12)); err_aff
 
-err_aff <- err_aff + annotate('text', x = -5, y = 1,
-                              label = expression(paste(beta, ' = 0.05*')), 
-                              parse = TRUE, 
-                              size = 5, hjust = 0)
+temp <- expression(beta == 0.05~'*')
 
+err_aff <- err_aff + annotate('text', x = -5, y = 1, 
+                              label = as.character(temp), parse = T, size = 5, hjust = 0); err_aff
 
 # --- SAVE PLOT
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2c.pdf', 
-                   err_aff, base_height = 5, base_width = 4.5)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2c.pdf', 
+#                    err_aff, base_height = 5, base_width = 4.5)
 
 
 # ----- Number of Incomp. Errors x Agency -----
-err_ag <- ggplot(dat_I, aes(x = Agency, y = pred)) +
+
+# --- Prepare data for plot
+dat_I <- as.data.frame(dat_I[[3]])
+dat_I$upper <- as.numeric(dat_I$upper)
+dat_I$lower <- as.numeric(dat_I$lower)
+dat_I$fit <- as.numeric(dat_I$fit)
+
+dat_p <- filter(In_rm, Outlier == 0)
+dat_p$pred <- predict(mod_err_in_1)
+
+
+err_ag <- ggplot(dat_p, 
+                 aes(x = Agency, y = pred, group = Subject)) +
   
-  annotate('text', x = -40, y = 45,
-           label = 'paste(italic(ß), \' = 0\')', parse = TRUE, size = 5) +
+  stat_summary(fun.y = mean, geom = 'point', size = 1, shape = 16, 
+               position = position_dodge(1), colour='#6B186EFF') +
   
-  geom_point(colour='#6B186EFF', size = 1, alpha = .7) +
-  
-  geom_smooth(method='glm', color = 'black', fill='#6B186EFF', alpha = .2) +
-  
-  coord_cartesian(ylim = c(1, 4))  +
-  
-  theme_classic() + 
+  geom_ribbon(data = dat_I,
+              aes(ymin = lower, ymax = upper, x = Agency), 
+              alpha = .2, inherit.aes = F, fill = '#6B186EFF') +
+  geom_line(data = dat_I, 
+            aes(x = Agency, y = fit), 
+            inherit.aes = F, size = 0.8, colour = 'black') +
   
   scale_x_continuous(breaks = c(-50, -25, 0, 25)) + 
   scale_y_continuous(breaks = c(1, 2, 3, 4)) +
@@ -504,6 +520,7 @@ err_ag <- ggplot(dat_I, aes(x = Agency, y = pred)) +
   labs(x =expression(bold('Agency' [' centred'])), 
        y = expression(bold('Est. Incidence of Incom. Errors ' ['log scaled']))) +
   
+  theme_classic() +
   theme(axis.line = element_blank(),
         axis.ticks = element_line(size = rel(1.1)),
         axis.ticks.length = unit(.1, 'cm'),
@@ -515,35 +532,35 @@ err_ag <- ggplot(dat_I, aes(x = Agency, y = pred)) +
                                     margin = margin(r = 15)),
         legend.position = 'none'); err_ag
 
-# SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2d.pdf', 
-          err_ag, base_height = 4, base_width = 3.5)
+# --- SAVE PLOT ---
+# save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_2d.pdf', 
+#           err_ag, base_height = 4, base_width = 3.5)
 
 
 
-# ----- 10) ANALYSE RT - Incompatible trials -----------------------
-Errors_In <- as.data.frame(Errors_In, row.names = 1:76)
-
-# Check distribution
-hist(Errors_In$M_RT, breaks=10)
-rug(Errors_In$M_RT)
-
-# Fit Model 
-mod_err_RT <- lm(data = Errors_In, 
-                 M_RT ~ Interest + Group + Agency + Affiliation)
-anova(mod_err_RT)
-summary(mod_err_RT)
-plot(mod_err_RT)
-
-# Remove Outliers? --> No effects
-mod_err_RT <- lm(data = Errors_In[-c(18, 37), ],
-                 M_RT ~ Interest + Group + Agency + Affiliation)
-anova(mod_err_RT)
-summary(mod_err_RT)
-plot(mod_err_RT)
-
-## COMPUTE CONFIDENCE INTERVALLS
-confint(mod_err_RT)
+# # ----- 10) ANALYSE RT - Incompatible trials -----------------------
+# Errors_In <- as.data.frame(Errors_In, row.names = 1:76)
+# 
+# # Check distribution
+# hist(Errors_In$M_RT, breaks=10)
+# rug(Errors_In$M_RT)
+# 
+# # Fit Model 
+# mod_err_RT <- lm(data = Errors_In, 
+#                  M_RT ~ Interest + Group + Agency + Affiliation)
+# anova(mod_err_RT)
+# summary(mod_err_RT)
+# plot(mod_err_RT)
+# 
+# # Remove Outliers? --> No effects
+# mod_err_RT <- lm(data = Errors_In[-c(18, 37), ],
+#                  M_RT ~ Interest + Group + Agency + Affiliation)
+# anova(mod_err_RT)
+# summary(mod_err_RT)
+# plot(mod_err_RT)
+# 
+# ## COMPUTE CONFIDENCE INTERVALLS
+# confint(mod_err_RT)
 
 
 
