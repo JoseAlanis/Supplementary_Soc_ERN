@@ -88,8 +88,8 @@ corr_box <- ggplot(Corrects,
 
 
 # --- SAVE PLOT
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3a.pdf', 
-          corr_box, base_height = 5, base_width = 3.5)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3a.pdf', 
+#           corr_box, base_height = 5, base_width = 3.5)
 
 
 # ------ 2) EFFECT CODE and center predictors -------------------
@@ -128,7 +128,6 @@ rug(Corrects$M_RT)
 
 
 
-
 # ------ 4) SET UP and FIT full model ---------------------------
 
 # --- FULL MODEL with interactions, controlling for
@@ -138,6 +137,7 @@ mod_full <- lmer(data = Corrects,
                    Group*Flankers*Affiliation + 
                    Group*Flankers*Agency + (1|ID), 
                  REML = F)
+# Anova table
 anova(mod_full)
 
 # --- Identify outlying observations
@@ -152,6 +152,7 @@ mod_full_1 <- lmer(data = filter(c_rm, Outlier == 0),
                      Group*Flankers*Affiliation + 
                      Group*Flankers*Agency + (1|ID), 
                    REML = F)
+# Anova table
 anova(mod_full_1)
 
 
@@ -161,8 +162,10 @@ mod_corrects <- lmer(data = Corrects,
                      M_RT ~ Tot_Errors + Motivation + 
                        Group + Flankers + Affiliation + Agency + (1|ID), 
                      REML = F)
+# Anova table
 anova(mod_corrects)
-qqPlot(resid(mod_corrects, 'pearson'))
+# Residuals ok?
+qqPlot(resid(mod_corrects, 'pearson')) # yes
 
 # --- Remove outliers
 c_rm <- stdResid(data = Corrects, model = mod_corrects, plot = T, 
@@ -171,11 +174,24 @@ c_rm <- stdResid(data = Corrects, model = mod_corrects, plot = T,
                  ylab = 'Std. Pearson Residuals', show.bound = T)
 
 # --- Re-fit without outliers
-mod_corrects_1 <- lmer(data = filter(c_rm, Outlier == 0), M_RT ~ Tot_Errors + Motivation + 
-                         Group + Flankers + Affiliation + Agency + (1|ID), REML = F)
+mod_corrects_1 <- lmer(data = filter(c_rm, Outlier == 0), 
+                       M_RT ~ Tot_Errors + Motivation + 
+                         Group + Flankers + Affiliation + Agency + (1|ID), 
+                       REML = F)
+# Anova table and coefficients
 anova(mod_corrects_1)
 summary(mod_corrects_1)
-car::qqPlot(resid(mod_corrects_1))
+# Residuals ok?
+qqPlot(resid(mod_corrects_1)) # yes
+
+# Semi-Partial R2 (Edwards, et al., 2008)
+# ((df numerator / df denominatot) x F) / 1 + ((df numerator / df denominatot) x F)
+((1/75.831)*0.7702)/(1+((1/75.831)*0.7702)) # Group
+((1/75.793)*0.7707)/(1+((1/75.793)*0.7707)) # Affiliation
+((1/75.852)*2.8693)/(1+((1/75.852)*2.8693)) # Agency
+((3/223.891)*162.6877)/(1+((3/223.891)*162.6877)) # Flankers
+((1/75.819)*48.4859)/(1+((1/75.819)*48.4859)) # Errors
+((1/75.819)*5.3411)/(1+((1/75.819)*5.3411)) # Motivation
 
 # --- Compare models with and without interactions
 anova(mod_full, mod_corrects) # Interaction doesnt improve model
@@ -242,6 +258,14 @@ rt_sc
 rt_ae <- emtrends(mod_corrects_1, ~ 1, var='Agency')
 rt_ae
 
+# --- Save motivation estimates
+rt_mo <- emtrends(mod_corrects_1, ~ 1, var='Motivation')
+rt_mo
+
+# --- Save motivation estimates
+rt_err <- emtrends(mod_corrects_1, ~ 1, var='Tot_Errors')
+rt_err
+
 
 
 # ------ 7) Create FIGURES ------------------------------------------
@@ -286,9 +310,10 @@ corr_p <- ggplot(data = as.data.frame(rt_flank$emmeans),
                                    color = 'black'),
         legend.position = 'none'); corr_p
 
-# --- SAVE PLOT
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3b.pdf', 
-          corr_p, base_height = 5, base_width = 2.5)
+
+# --- SAVE PLOT ---
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3b.pdf', 
+#           corr_p, base_height = 5, base_width = 2.5)
 
 
 # --- Effect of Number of Errors 
@@ -299,7 +324,7 @@ dat_I <- allEffects(mod_corrects_1, xlevels = 20)
 plot(dat_I, ylim = c(100, 400))
 dat_I <- as.data.frame(dat_I[[1]])
 
-
+# Create plot
 rt_err <- ggplot(dat_p, 
                   aes(x = Tot_Errors, y = M_RT, group = interaction(Subject, Flankers), color = Flankers)) +
 
@@ -342,20 +367,20 @@ rt_err <- ggplot(dat_p,
                                     margin = margin(r = 15)),
         legend.position = 'none'); rt_err
 
-rt_err <- rt_err + annotate('text', x = 10, y = 150,
-                              label = expression(paste(beta, ' = -1.4***')), 
-                              parse = TRUE, 
-                              size = 5, hjust = 0)
+temp <- expression(beta == -1.4~'***')
 
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3c.pdf', 
-                   rt_err, base_height = 4.5, base_width = 4)
+rt_err <- rt_err + annotate('text', x = 10, y = 150, 
+                              label = as.character(temp), parse = T, size = 5, hjust = 0); rt_err
+
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3c.pdf', 
+#                    rt_err, base_height = 4.5, base_width = 4)
 
 
 # --- Effect of ∆Motivation
 dat_I <- allEffects(mod_corrects_1, xlevels = 20)
 dat_I <- as.data.frame(dat_I[[2]])
 
-
+# Create plot
 rt_mot <- ggplot(dat_p, 
                  aes(x = Motivation, y = M_RT, group = interaction(Subject, Flankers), 
                      color = Flankers)) +
@@ -399,11 +424,11 @@ rt_mot <- ggplot(dat_p,
                                     margin = margin(r = 15)),
         legend.position = 'none'); rt_mot
 
-rt_mot <- rt_mot + annotate('text', x = -2.5, y = 150,
-                            label = expression(paste(beta, ' = 2.1*')), 
-                            parse = TRUE, 
-                            size = 5, hjust = 0)
 
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3d.pdf', 
-                   rt_mot, base_height = 4.5, base_width = 4)
+temp <- expression(beta == 2.1~'*')
 
+rt_mot <- rt_mot + annotate('text', x = -2.5, y = 150, 
+                            label = as.character(temp), parse = T, size = 5, hjust = 0); rt_mot
+
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_3d.pdf', 
+#                    rt_mot, base_height = 4.5, base_width = 4)
