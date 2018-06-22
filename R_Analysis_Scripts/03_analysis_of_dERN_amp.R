@@ -16,7 +16,6 @@ getPacks(pkgs)
 rm(pkgs)
 
 
-
 # ------ 1) Read in the data  -----------------------------------
 load('~/Documents/Experiments/soc_ftask/data_for_r/Incomp_ERPs.RData')
 
