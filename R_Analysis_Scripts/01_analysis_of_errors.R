@@ -234,7 +234,7 @@ plot(err_eff)
 
 # --- Summary of simple slopes
 err_grid <- ref_grid(mod_errors_1)
-summary(err_grid, infer=T)
+summary(err_grid, infer = T)
 
 # --- Save trial type estimates
 est_err <- emmeans(mod_errors_1, pairwise ~ Flankers,
