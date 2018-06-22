@@ -84,22 +84,28 @@ contrasts(Ave_Elec$Electrode) <- contr.sum(3); contrasts(Ave_Elec$Electrode)
 mod_elec <- lmer(data = Ave_Elec, 
                  M_Amp ~ Electrode + (1|Subject), 
                  REML = F)
+# Anova table
 anova(mod_elec)
-summary(mod_elec)
-qqPlot(resid(mod_elec, 'pearson'))
+# Residuals ok?
+qqPlot(resid(mod_elec, 'pearson')) # yes
 
 # --- Detect outlying observations
 Elec_rm <- stdResid(data = Ave_Elec, mod_elec, 
-                    plot = T, show.loess = T, 
+                    plot = T, 
+                    main = expression('Residuals ' ['LMER model for Phys. data']), 
+                    xlab = expression('Fitted Values ' ['Mean RT']),
+                    ylab = 'Std. Pearson Residuals',
                     show.bound = T)
 
 # --- Re-fit without outliers
 mod_elec_1 <- lmer(data = filter(Elec_rm, Outlier == 0), 
                    M_Amp ~ Electrode + (1|Subject), 
                    REML = F)
+# Avona table and coefficients
 anova(mod_elec_1)
 summary(mod_elec_1)
-qqPlot(resid(mod_elec_1, 'pearson'))
+# Residuals ok?
+qqPlot(resid(mod_elec_1, 'pearson')) # yes 
 
 # Coefficent of deteminations
 # R2m = only fixed effects, R2c = with random effects
