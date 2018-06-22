@@ -24,14 +24,14 @@ stdResid <- function(data, model, return.data = T, bound = 2.5, plot = F, show.b
       abline(h=0, col='black', lty = 2)
     }
     
-    # Draw loess fit
-    if (show.loess ==  T) {
-      lloess <- seq(min(fitted(model)), max(fitted(model)), length = nrow(model.frame(model))  )
-      lines(lloess, 
-            predict(loess(residuals(model) ~ fitted(model)), 
-                    newdata = lloess),
-            col = 'blue', lwd = 2)
-    }
+    # Draw loess fit (experimental, don't run)
+    # if (show.loess ==  T) {
+    #   lloess <- seq(min(fitted(model)), max(fitted(model)), length = nrow(model.frame(model))  )
+    #   lines(lloess, 
+    #         predict(loess(residuals(model) ~ fitted(model)), 
+    #                 newdata = lloess),
+    #         col = 'blue', lwd = 2)
+    # }
     
   }
   
