@@ -19,12 +19,14 @@ rm(pkgs)
 PES <- read.table('~/Documents/Experiments/soc_ftask/data_for_r/PES.txt', header=T)
 
 # ----- 2) Dummy code and center ------
+# Group
 contrasts(PES$Group) <- contr.sum(2) 
 contrasts(PES$Group)
-
+# Post error trial type 
 contrasts(PES$PE_Flankers) <- contr.sum(4) 
 contrasts(PES$PE_Flankers)
 
+# Center error amplitude
 mean(PES$Err_Amp)
 PES <- within( PES, {
   Err_Amp <- Err_Amp - mean(Err_Amp, na.rm = T) 
@@ -115,19 +117,13 @@ plot_pes1 <- plot_pes1 + coord_cartesian(ylim = c(0, 40)) +
         axis.title.y = element_text(size = 14, face = 'bold', 
                                     margin = margin(r = 15))); plot_pes1
 
-temp <- expression(beta == -0.26~'*') 
+temp <- expression(beta == -0.67~'*') 
 
-plot_pes1 <- plot_pes1 + annotate('text', x = -6.5, y = 0, 
-                            label = as.character(temp), parse = T, size = 5, hjust = 0); plot_pes1
-
-  annotate('text', x = '-6.5', y = 0,
-           label = expression(paste(beta, ' = -0.67*')), 
-           parse = TRUE, 
-           size = 5, hjust = 0); plot_pes1
+plot_pes1 <- plot_pes1 + annotate('text', x = '-6.5', y = 0, 
+                            label = as.character(temp), parse = T, size = 5, hjust = -0.3); plot_pes1
 
 
-
-# Save plot
+# --- Save plot ---
 # cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S2.pdf', 
 #                    plot_pes1,  base_height = 5, base_width = 4.5)
 
@@ -159,6 +155,6 @@ plot_pes2 <- plot_pes2 + coord_cartesian(ylim = c(-20, 60)) +
         legend.text = element_text(color = 'black', size=12),
         legend.title = element_text(color = 'black', size = 12, face='bold')); plot_pes2
 
-# Save plot
+# --- Save plot ---
 # cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S3.pdf', 
 #                    plot_pes2,  base_height = 5, base_width = 9)
