@@ -2,8 +2,8 @@
 #                           Post-error slowing
 
 # Get helper functions
-source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/getPacks.R')
-source('~/Documents/GitHub/Supplementary_Soc_ERN/R_Functions/stdResid.R')
+source('./R_Functions/getPacks.R')
+source('./R_Functions/stdResid.R')
 
 # Install and load multiple R packages necessary for analysis.
 pkgs <- c('dplyr', 'reshape2',
@@ -31,20 +31,26 @@ PES <- within( PES, {
 })
 
 # ----- 3) Fit the initial model ------
-mod_pes <- lmer(data = PES, pe_slowing ~ Total_Errors + Motivation + PE_Flankers +  Agency + 
-                  Err_Amp*Group*Affiliation +
-                  (1|Subject), REML = F)
+mod_pes <- lmer(data = PES, pe_slowing ~ Total_Errors + Motivation + 
+                PE_Flankers +  Agency + 
+                Err_Amp*Group*Affiliation +
+                (1|Subject), REML = F)
 anova(mod_pes)
 summary(mod_pes)
 
 # Indentify outliers
-pes_rm <- stdResid(data = PES, model = mod_pes, plot = T, show.bound = T)
+pes_rm <- stdResid(data = PES, model = mod_pes, 
+                   main = expression('Residuals ' ['LMER model for PES data']), 
+                   xlab = expression('Fitted Values ' ['Mean PES (ms)']),
+                   ylab = 'Std. Pearson Residuals',
+                   plot = T, show.bound = T)
 
 # Re-fit model without outliers
-mod_pes <- lmer(data = filter(pes_rm, Outlier == 0), pe_slowing ~ Total_Errors + Motivation + 
-                  PE_Flankers + Agency +
-                  Err_Amp*Group*Affiliation + 
-                  (1|Subject), REML = F)
+mod_pes <- lmer(data = filter(pes_rm, Outlier == 0), 
+                pe_slowing ~ Total_Errors + Motivation + 
+                PE_Flankers + Agency +
+                Err_Amp*Group*Affiliation + 
+                (1|Subject), REML = F)
 anova(mod_pes)
 summary(mod_pes)
 
@@ -85,18 +91,19 @@ confint(aff_group)
 
 # ----- 5) Plot effects ---------------
 
-# PES by ERN amplitude
-plot_pes1<- emmip(mod_pes, ~ Err_Amp, mult.name = "Group", cov.reduce = FALSE,
-                  at = list(Err_Amp = c(-6.5, 2.5), Agency = 0, 
-                            Affiliation = 0),
-                  CIs = T); plot_pes1
+# - Create plot: PES by ERN amplitude
+plot_pes1 <- emmip(mod_pes, ~ Err_Amp, mult.name = "Group", cov.reduce = FALSE,
+                   at = list(Err_Amp = c(-6.5, 2.5), Agency = 0, Affiliation = 0),
+                   CIs = T); plot_pes1
 
+# - Edit plot: PES by ERN amplitude
 plot_pes1 <- plot_pes1 + coord_cartesian(ylim = c(0, 40)) +
   geom_segment(aes(x = -Inf, y = 0, xend = -Inf, yend = 40), 
                color = 'black', size = rel(1)) +
   geom_segment(aes(x = '-6.5', y = -Inf, xend = '2.5', yend = -Inf),
                color = 'black', size = rel(1)) +
-  labs(y = 'Post-error slowing (ms)', x = 'Amplitude of the ERN (previous error)')+
+  labs(y = 'Post-error slowing (ms)', 
+       x = 'Amplitude of the ERN (previous error)')+
   theme_classic() +
   theme(axis.line = element_blank(),
         axis.ticks = element_line(size = rel(1.1)),
@@ -106,15 +113,23 @@ plot_pes1 <- plot_pes1 + coord_cartesian(ylim = c(0, 40)) +
         axis.title.x = element_text(size = 14, face = 'bold', 
                                     margin = margin(t = 15)),
         axis.title.y = element_text(size = 14, face = 'bold', 
-                                    margin = margin(r = 15))) +
+                                    margin = margin(r = 15))); plot_pes1
+
+temp <- expression(beta == -0.26~'*') 
+
+plot_pes1 <- plot_pes1 + annotate('text', x = -6.5, y = 0, 
+                            label = as.character(temp), parse = T, size = 5, hjust = 0); plot_pes1
+
   annotate('text', x = '-6.5', y = 0,
            label = expression(paste(beta, ' = -0.67*')), 
            parse = TRUE, 
            size = 5, hjust = 0); plot_pes1
 
+
+
 # Save plot
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S2.pdf', 
-                   plot_pes1,  base_height = 5, base_width = 4.5)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S2.pdf', 
+#                    plot_pes1,  base_height = 5, base_width = 4.5)
 
 
 # PES by ERN amplitude, affiliation and group
@@ -145,7 +160,5 @@ plot_pes2 <- plot_pes2 + coord_cartesian(ylim = c(-20, 60)) +
         legend.title = element_text(color = 'black', size = 12, face='bold')); plot_pes2
 
 # Save plot
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S3.pdf', 
-                   plot_pes2,  base_height = 5, base_width = 9)
-
-
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S3.pdf', 
+#                    plot_pes2,  base_height = 5, base_width = 9)
