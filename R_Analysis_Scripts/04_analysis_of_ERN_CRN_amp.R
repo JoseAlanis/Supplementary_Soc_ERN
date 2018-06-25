@@ -134,9 +134,13 @@ qqPlot(resid(mod_ern_1, 'pearson')) # yes, better.
 
 # Semi-Partial R2 (Edwards, et al., 2008)
 # ((df numerator / df denominatot) x F) / 1 + ((df numerator / df denominatot) x F)
+((1/75.996)*8.3930)/(1+((1/75.996)*8.3930)) # Motivation
 ((1/75.996)*272.6423)/(1+((1/75.996)*272.6423)) # Reaction
 ((1/75.855)*6.3513)/(1+((1/75.855)*6.3513)) # Reaction by Group
 ((1/75.913)*7.5238)/(1+((1/75.913)*7.5238)) # Agency by Group
+((1/76.009)*6.1250)/(1+((1/76.009)*6.1250)) # Affiliation by reaction
+((1/75.933)*8.2481)/(1+((1/75.933)*8.2481)) # Agency by reaction by group
+
 
 
 # Compare models with and with-out 
@@ -200,7 +204,10 @@ confint(group_means)
 reaction_means <- emmeans(mod_ern_1, 
                           pairwise ~ Reaction, 
                           lmer.df = 'satterthwaite',
-                          adjust = 'fdr')
+                          adjust = 'fdr',
+                          at = list(Affiliation = 0,
+                                    Agency =  0, 
+                                    Motivation = 0))
 
 # Effect of reaction
 reaction_means
@@ -216,12 +223,18 @@ confint(reaction_means)
 reaction_means <- emmeans(mod_ern_1, 
                           pairwise ~ Reaction | Group, 
                           lmer.df = 'satterthwaite', 
-                          adjust = 'fdr'); reaction_means
+                          adjust = 'fdr',
+                          at = list(Affiliation = 0,
+                                    Agency =  0, 
+                                    Motivation = 0)); reaction_means
 
 reaction_means <- emmeans(mod_ern_1, 
                           pairwise ~ Group | Reaction, 
                           lmer.df = 'satterthwaite',
-                          adjust = 'fdr'); reaction_means
+                          adjust = 'fdr',
+                          at = list(Affiliation = 0,
+                          Agency =  0, 
+                          Motivation = 0)); reaction_means
 
 # Effect of reaction
 as.data.frame(reaction_means$emmeans)
@@ -233,23 +246,34 @@ confint(reaction_means)
 
 # ----- AFFILIATION ESTIMATES --- ************
 # overall
-emtrends(mod_ern_1, var = 'Affiliation', ~ 1)
+emtrends(mod_ern_1, var = 'Affiliation', ~ 1,          
+         at = list(Agency =  0,
+                   Motivation = 0))
 
 # by reaction
 emtrends(mod_ern_1, var = 'Affiliation', 
          pairwise ~ Reaction, 
-         lmer.df = 'satterthwaite', adjust = 'fdr')
+         lmer.df = 'satterthwaite', 
+         adjust = 'fdr', 
+         at = list(Agency =  0, 
+                   Motivation = 0))
 
 # by reaction by group
 emtrends(mod_ern_1, var = 'Affiliation', 
          pairwise ~ Reaction | Group, 
-         lmer.df = 'satterthwaite', adjust = 'fdr')
+         lmer.df = 'satterthwaite', 
+         adjust = 'fdr',
+         at = list(Agency =  0, 
+                   Motivation = 0))
 
 # emmeans at +1 SD aff and -1 SD aff
 aff_react_group <- emmeans(mod_ern_1, 
                            pairwise ~ Reaction | Affiliation, 
-                           at = list(Affiliation = c(-4, 4)), 
-                           lmer.df = 'satterthwaite', adjust = 'fdr')
+                           at = list(Affiliation = c(-4, 4), 
+                                     Agency =  0, 
+                                     Motivation = 0), 
+                           lmer.df = 'satterthwaite', 
+                           adjust = 'fdr')
 
 # Summary
 aff_react_group
@@ -262,18 +286,27 @@ confint(aff_react_group)
 # ----- AGENCY ESTIMATES --- ************
 # --- overall
 emtrends(mod_ern_1, var = 'Agency', ~ 1,
-         lmer.df = 'satterthwaite', adjust = 'fdr')
+         lmer.df = 'satterthwaite', 
+         adjust = 'fdr',
+         at = list(Affiliation = 0,
+                   Motivation = 0))
 
 # by reaction by group
 emtrends(mod_ern_1, var = 'Agency', 
          pairwise ~ Reaction | Group, 
-         lmer.df = 'satterthwaite', adjust = 'fdr')
+         lmer.df = 'satterthwaite', 
+         adjust = 'fdr',
+         at = list(Affiliation = 0,
+                   Motivation = 0))
 
 # emmeans at +1 SD aff and -1 SD agency
 ag_react_group <- emmeans(mod_ern_1, 
-                           pairwise ~ Reaction | Group * Agency, 
-                           at = list(Agency = c(-14, 14)), 
-                           lmer.df = 'satterthwaite', adjust = 'fdr')
+                          pairwise ~ Reaction | Group * Agency, 
+                          at = list(Agency = c(-14, 14), 
+                                    Affiliation = 0,
+                                    Motivation = 0), 
+                          lmer.df = 'satterthwaite',
+                          adjust = 'fdr')
 
 # Summary
 ag_react_group
