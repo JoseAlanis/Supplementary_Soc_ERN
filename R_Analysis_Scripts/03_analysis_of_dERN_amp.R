@@ -351,9 +351,3 @@ ern_p <- ggplot(data = as.data.frame(group_means$emmeans),
                                    angle = 90),
         axis.text.y = element_text(color = 'black', size = 13),
         legend.position = 'none'); ern_p
-
-
-
-
-
-
