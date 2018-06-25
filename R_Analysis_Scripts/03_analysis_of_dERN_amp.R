@@ -9,8 +9,9 @@ source('./R_Functions/stdResid.R')
 # Install and load multiple R packages necessary for analysis.
 pkgs <- c('dplyr', 'reshape2',
           'lme4', 'lmerTest',
-          'effects', 'emmeans', 'car', 'MuMIn',
-          'ggplot2', 'viridis')
+          'effects','emmeans', 'car', 'MuMIn',
+          'ggplot2', 'viridis', 
+          'sjPlot', 'cowplot')
 
 getPacks(pkgs)
 rm(pkgs)
@@ -351,3 +352,139 @@ ern_p <- ggplot(data = as.data.frame(group_means$emmeans),
                                    angle = 90),
         axis.text.y = element_text(color = 'black', size = 13),
         legend.position = 'none'); ern_p
+
+
+
+# ------ 10) Plot estimates of ∆ERN by group * personalty  -----------
+dat_I <- allEffects(mod_ern_1, xlevels = 20)
+plot(dat_I, ylim = c(3, -16))
+dat_I <- as.data.frame(dat_I[[1]])
+
+dat_p <-filter(cz_fcz_rm, Outlier == 0)
+dat_p$pred <- predict(mod_ern_1)
+
+
+# --- Create Plot Affilaition by Group
+ern_aff <- ggplot(dat_p, 
+                  aes(x = Affiliation, y = ERN, group = Subject, color = Group)) +
+  
+  stat_summary(fun.y = mean, geom = 'point', size = 1, shape = 16, position = position_dodge(1)) +
+  
+  #facet_wrap(~ Group) +
+  
+  geom_ribbon(data = dat_I,
+              aes(ymin = lower, ymax = upper, x = Affiliation, fill = Group), 
+              alpha = .2, inherit.aes = F) +
+  geom_line(data = dat_I, 
+            aes(x = Affiliation, y = fit, color = Group, linetype = Group), 
+            inherit.aes = F, size = 0.8) +
+  
+  scale_y_reverse(breaks = c(5, 0, -5, -10, -15)) + 
+  coord_cartesian( ylim = c(5, -15)) +
+  
+  scale_color_viridis(option = 'A', discrete = T, 
+                      direction = -1, begin = .05, end = .6) +
+  scale_fill_viridis(option = 'A', discrete = T, 
+                     direction = -1, begin = .05, end = .6) +
+  
+  theme_classic() + 
+  
+  scale_x_continuous(breaks = c(-12, -6, 0, 6)) + 
+  
+  geom_segment(aes(x = -Inf, y = 5, xend = -Inf, yend = -15), 
+               color = 'black', size = rel(1)) +
+  geom_segment(aes(x = -12, y = Inf, xend = 6, yend = Inf), 
+               color = 'black', size = rel(1)) +
+  
+  labs(x = expression(bold('Affiliation' [' centred'])), 
+       y = expression(bold(paste('Estimated ', Delta, 'ERN amplitdue (', mu, 'V)')))) +
+  
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = 14, color = 'black', face = 'bold'),
+        axis.line = element_blank(),
+        axis.ticks = element_line(size = rel(1.1)),
+        axis.ticks.length = unit(.1, 'cm'),
+        axis.text.x = element_text(size = 13, color = 'black'),
+        axis.text.y = element_text(size = 13, color = 'black'),
+        axis.title.x = element_text(size = 14, face = 'bold', 
+                                    margin = margin(t = 15)),
+        axis.title.y = element_text(size = 14, face = 'bold', 
+                                    margin = margin(r = 15)),
+        legend.position = 'bottom', legend.key.width = unit(1, 'cm'),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 12)); ern_aff
+
+ern_aff <- ern_aff + annotate('text', x = -10.5, y = 5,
+                              label = expression(paste(beta [comp], ' = -0.40**    ', beta [coop], ' = -0.09')), 
+                              parse = TRUE, 
+                              size = 5, hjust = 0)
+
+
+# --- SAVE PLOT
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_6a.pdf', 
+                   ern_aff, base_height = 5, base_width = 4.5)
+
+
+# --- Create Plot Affilaition by Group
+dat_I <- allEffects(mod_ern_1, xlevels = 20)
+dat_I <- as.data.frame(dat_I[[2]])
+
+
+ern_ag <- ggplot(dat_p, 
+                 aes(x = Agency, y = ERN, group = Subject, color = Group)) +
+  
+  stat_summary(fun.y = mean, geom = 'point', size = 1, shape = 16, position = position_dodge(1)) +
+  
+  #facet_wrap(~ Group) +
+  
+  geom_ribbon(data = dat_I,
+              aes(ymin = lower, ymax = upper, x = Agency, fill = Group), 
+              alpha = .2, inherit.aes = F) +
+  geom_line(data = dat_I, 
+            aes(x = Agency, y = fit, color = Group, linetype = Group), 
+            inherit.aes = F, size = 0.8) +
+  
+  scale_y_reverse(breaks = c(5, 0, -5, -10, -15)) + 
+  coord_cartesian( ylim = c(5, -15)) +
+  
+  scale_color_viridis(option = 'A', discrete = T, 
+                      direction = -1, begin = .05, end = .6) +
+  scale_fill_viridis(option = 'A', discrete = T, 
+                     direction = -1, begin = .05, end = .6) +
+  
+  theme_classic() + 
+  
+  scale_x_continuous(breaks = c(-45, -30, -15, 0, 15, 30)) + 
+  
+  geom_segment(aes(x = -Inf, y = 5, xend = -Inf, yend = -15), 
+               color = 'black', size = rel(1)) +
+  geom_segment(aes(x = -45, y = Inf, xend = 30, yend = Inf), 
+               color = 'black', size = rel(1)) +
+  
+  labs(x = expression(bold('Agency' [' centred'])), 
+       y = expression(bold(paste('Estimated ', Delta, 'ERN amplitdue (', mu, 'V)')))) +
+  
+  theme(strip.background = element_blank(),
+        strip.text = element_text(size = 14, color = 'black', face = 'bold'),
+        axis.line = element_blank(),
+        axis.ticks = element_line(size = rel(1.1)),
+        axis.ticks.length = unit(.1, 'cm'),
+        axis.text.x = element_text(size = 13, color = 'black'),
+        axis.text.y = element_text(size = 13, color = 'black'),
+        axis.title.x = element_text(size = 14, face = 'bold', 
+                                    margin = margin(t = 15)),
+        axis.title.y = element_text(size = 14, face = 'bold', 
+                                    margin = margin(r = 15)),
+        legend.position = 'bottom', legend.key.width = unit(1, 'cm'),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 12))
+
+ern_ag <- ern_ag + annotate('text', x = -38, y = 5,
+                            label = expression(paste(beta [comp], ' = 0.08*    ', beta [coop], ' = -0.05')), 
+                            parse = TRUE, 
+                            size = 5, hjust = 0)
+
+
+# --- SAVE PLOT
+cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_6b.pdf', 
+                   ern_ag, base_height = 5, base_width = 4.5)

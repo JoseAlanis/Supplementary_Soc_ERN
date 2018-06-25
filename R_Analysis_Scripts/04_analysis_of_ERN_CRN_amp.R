@@ -435,7 +435,12 @@ ern_aff <- ggplot(filter(dat_p, Reaction == 'ERN'),
                                     margin = margin(r = 15)),
         legend.position = 'bottom', legend.key.width = unit(1, 'cm'),
         legend.title = element_blank(),
-        legend.text = element_text(size = 12))
+        legend.text = element_text(size = 12));ern_aff
+
+temp <- expression(beta ['comp']== -0.26~',' ~ beta ['coop']== -0.03~',') 
+
+rt_err <- rt_err + annotate('text', x = 10, y = 150, 
+                            label = as.character(temp), parse = T, size = 5, hjust = 0); rt_err
 
 ern_aff <- ern_aff + annotate('text', x = -10.5, y = 10,
                               label = expression(paste(beta [comp], ' = -0.26    ', 
