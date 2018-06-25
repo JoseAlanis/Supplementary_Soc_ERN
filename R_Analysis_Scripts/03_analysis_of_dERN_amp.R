@@ -93,7 +93,7 @@ qqPlot(resid(mod_elec, 'pearson')) # yes
 Elec_rm <- stdResid(data = Ave_Elec, mod_elec, 
                     plot = T, 
                     main = expression('Residuals ' ['LMER model for electrode data']), 
-                    xlab = expression('Fitted Values ' ['Mean RT']),
+                    xlab = expression('Fitted Values ' ['Mean Amp (µV)']),
                     ylab = 'Std. Pearson Residuals',
                     show.bound = T)
 
@@ -183,6 +183,9 @@ anova(mod_ern_full)
 
 # --- Find outliers
 cz_fcz_rm <- stdResid(data = cz_fcz, mod_ern_full, 
+                      main = expression('Residuals ' ['LMER model for ERN data']), 
+                      xlab = expression('Fitted Values ' ['Mean Amp (µV)']),
+                      ylab = 'Std. Pearson Residuals',
                       return.data = T, plot = T, 
                       show.loess = T, show.bound = T)
 
@@ -191,6 +194,7 @@ mod_ern_full_1 <- lmer(data = filter(cz_fcz_rm, Outlier == 0),
                        ERN ~ Tot_Errors + Motivation + 
                          Group*Affiliation + Group*Agency + 
                          (1|Subject), REML = F)
+# Avova table
 anova(mod_ern_full_1)
 
 # Coefficent of deteminations
@@ -204,12 +208,17 @@ r.squaredGLMM(mod_ern_full_1)
 mod_ern <- lmer(data = cz_fcz, 
                 ERN ~ Group*Affiliation + Group*Agency + 
                   (1|Subject), REML = F)
+# Anova table and coefficients
 anova(mod_ern)
 summary(mod_ern)
-qqPlot(resid(mod_ern, 'pearson'))
+# Residuals ok?
+qqPlot(resid(mod_ern, 'pearson')) # heavy on the tails
 
 # --- Find outliers
 cz_fcz_rm <- stdResid(data = cz_fcz, mod_ern, 
+                      main = expression('Residuals ' ['LMER model for ERN data']), 
+                      xlab = expression('Fitted Values ' ['Mean Amp (µV)']),
+                      ylab = 'Std. Pearson Residuals',
                       return.data = T, plot = T, 
                       show.loess = T, show.bound = T)
 
@@ -217,9 +226,19 @@ cz_fcz_rm <- stdResid(data = cz_fcz, mod_ern,
 mod_ern_1 <- lmer(data = filter(cz_fcz_rm, Outlier == 0), 
                   ERN ~ Group*Affiliation + Group*Agency + 
                     (1|Subject), REML = F)
+# Avova table and coefficients
 anova(mod_ern_1)
 summary(mod_ern_1)
-qqPlot(resid(mod_ern_1, 'pearson'))
+# Residuals ok?
+qqPlot(resid(mod_ern_1, 'pearson')) # yes
+
+# Semi-Partial R2 (Edwards, et al., 2008)
+# ((df numerator / df denominatot) x F) / 1 + ((df numerator / df denominatot) x F)
+((1/75.911)*5.8277)/(1+((1/75.911)*5.8277)) # Group
+((1/76.045)*7.5535)/(1+((1/76.045)*7.5535)) # Affiliation
+((1/75.913)*7.5238)/(1+((1/75.913)*7.5238)) # Agency by Group
+
+
 
 # Compare models with and with-out 
 # scores in control variables
@@ -249,7 +268,8 @@ emm_options(lmerTest.limit = 4000)
 
 # --- Save group estimates
 group_means <- emmeans(mod_ern_1, pairwise ~ Group, 
-                       lmer.df = 'satterthwaite')
+                       lmer.df = 'satterthwaite', 
+                       at = list(Affiliation = 0, Agency = 0))
 # --- Effect of group
 group_means
 # --- Compute CIs
@@ -258,16 +278,23 @@ confint(group_means)
 
 # --- Effect of Affiliation
 emtrends(mod_ern_1, var = 'Affiliation', ~ 1, 
-         lmer.df = 'satterthwaite')
+         lmer.df = 'satterthwaite', 
+         at = list(Agency = 0))
+# Affilaition by group
+emtrends(mod_ern_1, var = 'Affiliation', ~ Group, 
+         lmer.df = 'satterthwaite', 
+         at = list(Agency = 0))
 
 
 # --- Effect of agency
 emtrends(mod_ern_1, var = 'Agency', ~ 1, 
-         lmer.df = 'satterthwaite')
-
-# --- Effect of agency by group
+         lmer.df = 'satterthwaite',
+         at = list(Affiliation = 0))
+# Agency by group
 emtrends(mod_ern_1, var = 'Agency', 
-         pairwise ~ Group, lmer.df = 'satterthwaite')
+         pairwise ~ Group, 
+         lmer.df = 'satterthwaite',
+         at = list(Affiliation = 0))
 
 
 # # ----- Refit for simple slopes
