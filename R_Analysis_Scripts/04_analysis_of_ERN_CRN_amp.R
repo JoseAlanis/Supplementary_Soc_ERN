@@ -576,18 +576,14 @@ ern_ag <- ggplot(filter(dat_p, Reaction == 'ERN'),
         legend.title = element_blank(),
         legend.text = element_text(size = 12)); ern_ag
 
+temp <- expression(beta [comp] == 0.04~' ' ~ beta [coop] == -0.06)
 
-
-ern_ag <- ern_ag + annotate('text', x = -40, y = 10,
-                              label = expression(paste(beta [comp], ' = 0.04        ', 
-                                                       beta [coop], ' = -0.06')), 
-                              parse = TRUE, 
-                              size = 5, hjust = 0)
-
+ern_ag <- ern_ag + annotate('text', x = -36, y = 10, 
+                            label = as.character(temp), parse = T, size = 5, hjust = 0); ern_ag
 
 # --- SAVE PLOT
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_9a.pdf', 
-                   ern_ag, base_height = 5, base_width = 4.5)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_9a.pdf', 
+#                    ern_ag, base_height = 5, base_width = 4.5)
 
 
 
@@ -642,15 +638,14 @@ crn_ag <- ggplot(filter(dat_p, Reaction == 'CRN'),
                                     margin = margin(r = 15)),
         legend.position = 'bottom', legend.key.width = unit(1, 'cm'),
         legend.title = element_blank(),
-        legend.text = element_text(size = 12))
+        legend.text = element_text(size = 12)); crn_ag
 
-crn_ag <- crn_ag + annotate('text', x = -40, y = 10,
-                            label = expression(paste(beta [comp], ' = -0.03          ', 
-                                                     beta [coop], ' = 0')), 
-                            parse = TRUE, 
-                            size = 5, hjust = 0)
+temp <- expression(beta [comp] == -0.03~' ' ~ beta [coop] == 0)
+
+crn_ag <- crn_ag + annotate('text', x = -36, y = 10, 
+                            label = as.character(temp), parse = T, size = 5, hjust = 0); crn_ag
 
 
 # --- SAVE PLOT
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_9b.pdf', 
-                   crn_ag, base_height = 5, base_width = 4.5)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_9b.pdf', 
+#                    crn_ag, base_height = 5, base_width = 4.5)
