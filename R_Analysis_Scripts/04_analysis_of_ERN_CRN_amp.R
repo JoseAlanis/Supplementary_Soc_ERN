@@ -24,39 +24,45 @@ load('~/Documents/Experiments/soc_ftask/data_for_r/Incomp_ERPs.RData')
 ERN_CRN <- filter(ERP, Electrode == 'Cz' | Electrode == 'FCz')
 ERN_CRN <- filter(ERN_CRN, Time >= 0 & Time <= 100)
 
-# ### Descriptive statistics
+# --- Descriptive statistics ---
+# Amp by reaction
 ERN_CRN %>% group_by(Reaction) %>% 
   dplyr::summarise(M = mean(Amplitude), 
                    SD = sd(Amplitude), 
                    SE = sd(Amplitude) / sqrt(sum(!is.na(Amplitude))))
-
+# Amp by reaction by group
 ERN_CRN %>% group_by(Reaction, Group) %>%  
   dplyr::summarise(M = mean(Amplitude), 
                    SD = sd(Amplitude), 
                    SE = sd(Amplitude) / sqrt(sum(!is.na(Amplitude))))
 
+# Mean and SD of affialition - for simple slopes analyses
 unique(select(ERN_CRN, Subject, Affiliation)) %>% 
   dplyr::summarise(M = mean(Affiliation), 
                    SD = sd(Affiliation))
-
+# Mean and SD of agency - for simple slopes analyses
 unique(select(ERN_CRN, Subject, Agency)) %>% 
   dplyr::summarise(M = mean(Agency), 
                    SD = sd(Agency))
 
+# Mean and SD of errors - for simple slopes analyses
 ERN_CRN %>% dplyr::summarise(M = mean(Total_Errors), 
                              SD = sd(Total_Errors))
 
 
-# DUMMY CODE electrode variable
+# Effect code electrode variable
 ERN_CRN$Electrode <- factor(ERN_CRN$Electrode)
 contrasts(ERN_CRN$Electrode) <- contr.sum(2); contrasts(ERN_CRN$Electrode)
 contrasts(ERN_CRN$Group) <- contr.sum(2); contrasts(ERN_CRN$Group)
 
-ERN_CRN$Reaction <- factor(ERN_CRN$Reaction, levels = c('Incorrect', 'Correct'))
+# Relevel reaction variable
+ERN_CRN$Reaction <- factor(ERN_CRN$Reaction, 
+                           levels = c('Incorrect', 'Correct'))
+# Effect code raction variable
 contrasts(ERN_CRN$Reaction) <- contr.sum(2); contrasts(ERN_CRN$Reaction)
 
 
-# --- Mean center number of errors
+# --- Mean center number of errors ---
 ERN_CRN <- within( ERN_CRN, {
   Tot_Errors <- Total_Errors - mean(Total_Errors, na.rm = T)
 })
@@ -68,13 +74,14 @@ mod_rns_full <- lmer(data = ERN_CRN,
                      Amplitude ~ Tot_Errors + Motivation + 
                        Reaction*Group*Affiliation + Reaction*Group*Agency + 
                        (1|Subject/Reaction), REML = F)
+# Anova table
 anova(mod_rns_full)
-summary(mod_rns_full)
-qqPlot(resid(mod_rns_full))
-
 
 # --- Find outliers
 ERN_CRN_rm <- stdResid(data = ERN_CRN, mod_rns_full, 
+                       main = expression('Residuals ' ['LMER model for phys. data']), 
+                       xlab = expression('Fitted Values ' ['Mean Amp (µV)']),
+                       ylab = 'Std. Pearson Residuals',
                        return.data = T, plot = T, 
                        show.bound = T)
 
@@ -83,9 +90,11 @@ mod_rns_full_1 <- lmer(data = filter(ERN_CRN_rm, Outlier == 0),
                      Amplitude ~ Tot_Errors + Motivation + 
                        Reaction*Group*Affiliation + Reaction*Group*Agency + 
                        (1|Subject/Reaction), REML = F)
+# Anova table and coefficients
 anova(mod_rns_full_1)
 summary(mod_rns_full_1)
-qqPlot(resid(mod_rns_full_1))
+# Residuals ok?
+qqPlot(resid(mod_rns_full_1)) # yes
 
 
 # Coefficent of deteminations
@@ -98,24 +107,36 @@ mod_ern <- lmer(data = ERN_CRN,
                 Amplitude ~ Motivation + 
                   Reaction*Group*Affiliation + Reaction*Group*Agency + 
                   (1|Subject/Reaction), REML = F)
+# Anova table
 anova(mod_ern)
-summary(mod_ern)
-qqPlot(resid(mod_ern, 'pearson'))
+# Residuals ok?
+qqPlot(resid(mod_ern, 'pearson')) # a bit heavy on the tails.
 
 
 # --- Find outliers
 ERN_CRN_rm <- stdResid(data = ERN_CRN, mod_ern, 
-                      return.data = T, plot = T, 
-                      show.bound = T)
+                       main = expression('Residuals ' ['LMER model for phys. data']), 
+                       xlab = expression('Fitted Values ' ['Mean Amp (µV)']),
+                       ylab = 'Std. Pearson Residuals',
+                       return.data = T, plot = T, 
+                       show.bound = T)
 
 # --- Re-fit without outliers
 mod_ern_1 <- lmer(data = filter(ERN_CRN_rm, Outlier == 0), 
                   Amplitude ~ Motivation + 
                     Reaction*Group*Affiliation + Reaction*Group*Agency + 
                     (1|Subject/Reaction), REML = F)
+# Anova table and coefficients
 anova(mod_ern_1)
 summary(mod_ern_1)
-qqPlot(resid(mod_ern_1, 'pearson'))
+# Residuals ok?
+qqPlot(resid(mod_ern_1, 'pearson')) # yes, better.
+
+# Semi-Partial R2 (Edwards, et al., 2008)
+# ((df numerator / df denominatot) x F) / 1 + ((df numerator / df denominatot) x F)
+((1/75.996)*272.6423)/(1+((1/75.996)*272.6423)) # Reaction
+((1/75.855)*6.3513)/(1+((1/75.855)*6.3513)) # Reaction by Group
+((1/75.913)*7.5238)/(1+((1/75.913)*7.5238)) # Agency by Group
 
 
 # Compare models with and with-out 
@@ -149,18 +170,25 @@ sjPlot::sjt.lmer(mod_rns_full_1, mod_ern_1, cell.spacing = 0.1,
 
 # ------ 3) Follow-up analyses model ∆ERN by group ------------------
 emm_options(lmerTest.limit = 8000)
-summary(ref_grid(mod_ern_1), infer=T)
 
 # ----- GROUP ESTIMATES --- ************
 # Save group estimates
 group_means <- emmeans(mod_ern_1, 
                        pairwise ~ Reaction | Group, 
-                       lmer.df = 'satterthwaite', adjust='fdr')
+                       lmer.df = 'satterthwaite', 
+                       adjust='fdr', 
+                       at = list(Affiliation = 0, 
+                                 Agency =  0, 
+                                 Motivation = 0))
 
 # Group by reaction estimates
 group_means <- emmeans(mod_ern_1,
                        pairwise ~ Group | Reaction,
-                       lmer.df = 'satterthwaite', adjust='fdr')
+                       lmer.df = 'satterthwaite', 
+                       adjust='fdr', 
+                       at = list(Affiliation = 0, 
+                                 Agency =  0, 
+                                 Motivation = 0))
 
 # Effect of group
 as.data.frame(group_means$contrasts)
