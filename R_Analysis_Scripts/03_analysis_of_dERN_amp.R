@@ -92,7 +92,7 @@ qqPlot(resid(mod_elec, 'pearson')) # yes
 # --- Detect outlying observations
 Elec_rm <- stdResid(data = Ave_Elec, mod_elec, 
                     plot = T, 
-                    main = expression('Residuals ' ['LMER model for Phys. data']), 
+                    main = expression('Residuals ' ['LMER model for electrode data']), 
                     xlab = expression('Fitted Values ' ['Mean RT']),
                     ylab = 'Std. Pearson Residuals',
                     show.bound = T)
@@ -116,11 +116,11 @@ r.squaredGLMM(mod_elec_1)
 # ------ 5) Follow-up analyses model electrodes --------------------
 # --- Pairwise comparissons
 emmeans(mod_elec_1, pairwise ~ Electrode, 
-        adjust = 'bonferroni', lmer.df ='satterthwaite')
+        adjust = 'fdr', lmer.df ='satterthwaite')
 
 # --- Save electrode estimates
 est_elec <- emmeans(mod_elec_1, pairwise ~ Electrode,
-                   adjust = 'bonferroni', lmer.df ='satterthwaite')
+                   adjust = 'fdr', lmer.df ='satterthwaite')
 
 # --- Effect of electrode and Plot results
 est_elec;  emmip(mod_elec_1, ~ Electrode, CIs = T)
@@ -178,6 +178,7 @@ mod_ern_full <- lmer(data = cz_fcz,
                      ERN ~ Tot_Errors + Motivation + 
                        Group*Affiliation + Group*Agency + 
                        (1|Subject), REML = F)
+# Anova table
 anova(mod_ern_full)
 
 # --- Find outliers
