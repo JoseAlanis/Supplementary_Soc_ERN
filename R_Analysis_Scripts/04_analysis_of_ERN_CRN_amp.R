@@ -435,23 +435,17 @@ ern_aff <- ggplot(filter(dat_p, Reaction == 'ERN'),
                                     margin = margin(r = 15)),
         legend.position = 'bottom', legend.key.width = unit(1, 'cm'),
         legend.title = element_blank(),
-        legend.text = element_text(size = 12));ern_aff
+        legend.text = element_text(size = 12)); ern_aff
 
-temp <- expression(beta ['comp']== -0.26~',' ~ beta ['coop']== -0.03~',') 
+temp <- expression(beta ['comp']== -0.26~' ' ~ beta ['coop']== -0.03) 
 
-rt_err <- rt_err + annotate('text', x = 10, y = 150, 
-                            label = as.character(temp), parse = T, size = 5, hjust = 0); rt_err
-
-ern_aff <- ern_aff + annotate('text', x = -10.5, y = 10,
-                              label = expression(paste(beta [comp], ' = -0.26    ', 
-                                                       beta [coop], ' = -0.03')), 
-                              parse = TRUE, 
-                              size = 5, hjust = 0)
+ern_aff <- ern_aff + annotate('text', x = -10.5, y = 10, 
+                            label = as.character(temp), parse = T, size = 5, hjust = 0); ern_aff
 
 
 # --- SAVE PLOT
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_8a.pdf', 
-                   ern_aff, base_height = 5, base_width = 4.5)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_8a.pdf', 
+#                    ern_aff, base_height = 5, base_width = 4.5)
 
 
 
@@ -504,17 +498,17 @@ crn_aff <- ggplot(filter(dat_p, Reaction == 'CRN'),
                                     margin = margin(r = 15)),
         legend.position = 'bottom', legend.key.width = unit(1, 'cm'),
         legend.title = element_blank(),
-        legend.text = element_text(size = 12))
+        legend.text = element_text(size = 12)); crn_aff
 
-crn_aff <- crn_aff + annotate('text', x = -10.5, y = 10,
-                              label = expression(paste(beta [comp], ' = 0.12      ', 
-                                                       beta [coop], ' = 0.03')), 
-                              parse = TRUE, 
-                              size = 5, hjust = 0)
+temp <- expression(beta ['comp']== -0.12~' ' ~ beta ['coop']== -.03) 
+
+crn_aff <- crn_aff + annotate('text', x = -10.5, y = 10, 
+                              label = as.character(temp), parse = T, size = 5, hjust = 0); crn_aff
+
 
 # --- SAVE PLOT
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_8b.pdf', 
-                   crn_aff, base_height = 5, base_width = 4.5)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_8b.pdf', 
+#                    crn_aff, base_height = 5, base_width = 4.5)
 
 
 
@@ -580,7 +574,9 @@ ern_ag <- ggplot(filter(dat_p, Reaction == 'ERN'),
                                     margin = margin(r = 15)),
         legend.position = 'bottom', legend.key.width = unit(1, 'cm'),
         legend.title = element_blank(),
-        legend.text = element_text(size = 12))
+        legend.text = element_text(size = 12)); ern_ag
+
+
 
 ern_ag <- ern_ag + annotate('text', x = -40, y = 10,
                               label = expression(paste(beta [comp], ' = 0.04        ', 
