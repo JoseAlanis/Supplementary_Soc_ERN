@@ -414,18 +414,18 @@ ern_aff <- ggplot(dat_p,
         legend.title = element_blank(),
         legend.text = element_text(size = 12)); ern_aff
 
-ern_aff <- ern_aff + annotate('text', x = -10.5, y = 5,
-                              label = expression(paste(beta [comp], ' = -0.40**    ', beta [coop], ' = -0.09')), 
-                              parse = TRUE, 
-                              size = 5, hjust = 0)
+temp <- expression(beta [comp] == -0.40~'** ' ~ beta [coop] == -0.09)
+
+ern_aff <- ern_aff + annotate('text', x = -10.5, y = 5, 
+                            label = as.character(temp), parse = T, size = 5, hjust = 0); ern_aff
 
 
 # --- SAVE PLOT
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_6a.pdf', 
-                   ern_aff, base_height = 5, base_width = 4.5)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_6a.pdf', 
+#                    ern_aff, base_height = 5, base_width = 4.5)
 
 
-# --- Create Plot Affilaition by Group
+# --- Create Plot Agency by Group
 dat_I <- allEffects(mod_ern_1, xlevels = 20)
 dat_I <- as.data.frame(dat_I[[2]])
 
@@ -477,14 +477,15 @@ ern_ag <- ggplot(dat_p,
                                     margin = margin(r = 15)),
         legend.position = 'bottom', legend.key.width = unit(1, 'cm'),
         legend.title = element_blank(),
-        legend.text = element_text(size = 12))
+        legend.text = element_text(size = 12)); ern_ag
 
-ern_ag <- ern_ag + annotate('text', x = -38, y = 5,
-                            label = expression(paste(beta [comp], ' = 0.08*    ', beta [coop], ' = -0.05')), 
-                            parse = TRUE, 
-                            size = 5, hjust = 0)
+
+temp <- expression(beta [comp] == 0.08~'* ' ~ beta [coop] == -0.05)
+
+ern_ag <- ern_ag + annotate('text', x = -38, y = 5, 
+                              label = as.character(temp), parse = T, size = 5, hjust = 0); ern_ag
 
 
 # --- SAVE PLOT
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_6b.pdf', 
-                   ern_ag, base_height = 5, base_width = 4.5)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_6b.pdf', 
+#                    ern_ag, base_height = 5, base_width = 4.5)
