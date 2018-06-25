@@ -3,17 +3,18 @@
 #
 
 # Get helper function
-source('./Documents/GitHub/Supplementary_Soc_ERN/R_Functions/getPacks.R')
+source('./R_Functions/getPacks.R')
 source('~/Documents/r_functions/topoplot.R')
 
 # Load packages
 pkgs <- c('dplyr', 'plyr', 'reshape2', 
           'ggplot2', 'viridis', 'cowplot', 'RColorBrewer')
+
 getPacks(pkgs)
 rm(pkgs)
 
 # Get electrode locations
-chanlocs <- read.table('~/Documents/Experiments/soc_ftask/meta_dat/chanlocs_ftask.txt',
+chanlocs <- read.table('./meta_dat/chanlocs_ftask.txt',
                        header = T, 
                        sep = ',')
 # Rename column
@@ -206,8 +207,8 @@ elec_p <- ggplot(filter(Ave_Elect_long,
 
 
 # ----- Save the plot
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S1a.pdf', 
-          elec_p, base_height = 5, base_width = 7)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S1a.pdf', 
+#                    elec_p, base_height = 5, base_width = 7)
 
 # ----- Calculate charthesian coordiantes
 # ----- for Mean ∆ERN topoplot
@@ -240,8 +241,8 @@ t_plot <- t_plot +
         legend.text = element_text(size = 18))
 
 
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S1b.pdf', 
-          t_plot, base_height = 5, base_width = 5)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S1b.pdf', 
+#                    t_plot, base_height = 5, base_width = 5)
 
 
 
@@ -301,8 +302,8 @@ ERN_p <- ggplot(filter(Ave_ERN, Time >= -500),
 
 
 # SAVE PLOT
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4a.pdf', 
-          ERN_p, base_height = 5, base_width = 7)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4a.pdf', 
+#                    ERN_p, base_height = 5, base_width = 7)
 
 
 # ----- Calculate charthesian coordiantes
@@ -338,8 +339,8 @@ t_plot <- t_plot +
         legend.text = element_text(size = 17))
 
 # ----- SAVE the plot
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4b1.pdf', 
-          t_plot, base_height = 4, base_width = 6)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4b1.pdf', 
+#                    t_plot, base_height = 4, base_width = 6)
 
 # *****
 # ----- Cooperation data
@@ -366,8 +367,8 @@ t_plot <- t_plot +
         legend.text = element_text(size = 17))
 
 # ----- SAVE the plot
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4b2.pdf', 
-          t_plot, base_height = 4, base_width = 6)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4b2.pdf', 
+#                    t_plot, base_height = 4, base_width = 6)
 
 
 
@@ -431,8 +432,8 @@ erp_ern <- erp_ern +
                                barheight = 1.1))
 
 # ----- SAVE the plot
-save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4c.pdf', 
-          erp_ern, base_height = 5, base_width = 7)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4c.pdf', 
+#                    erp_ern, base_height = 5, base_width = 7)
 
 
 
@@ -495,8 +496,8 @@ ern_crn_erp <- ggplot(filter(Ave_ERP, Electrode == 'FCz', # <- select electrode 
 
 
 # ----- SAVE the plot
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_6a.pdf', 
-                   ern_crn_erp, base_height = 5, base_width = 12)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_6a.pdf', 
+#                    ern_crn_erp, base_height = 5, base_width = 12)
 
 
 ern_crn_erp <- ggplot(filter(Ave_ERP, Electrode == 'Cz', # <- select electrode to plot
@@ -556,8 +557,8 @@ ern_crn_erp <- ggplot(filter(Ave_ERP, Electrode == 'Cz', # <- select electrode t
 
 
 # ----- SAVE the plot
-cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_6b.pdf', 
-                   ern_crn_erp, base_height = 5, base_width = 12)
+# cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_6b.pdf', 
+#                    ern_crn_erp, base_height = 5, base_width = 12)
 
 
 
