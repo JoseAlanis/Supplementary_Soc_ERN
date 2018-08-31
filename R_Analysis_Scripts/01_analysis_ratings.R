@@ -14,8 +14,8 @@ setwd(project_path)
 source(paste(upload_path, 'r_functions/getPacks.R', sep = ''))
 
 # Install and load multiple r packages necessary for analysis
-pkgs <- c('dplyr', 
-          'reshape2', 'tidyr', 
+pkgs <- c('dplyr', 'reshape2', 'tidyr', 
+          'car',
           'ggplot2', 'viridis', 'cowplot')
 getPacks(pkgs)
 rm(pkgs)
