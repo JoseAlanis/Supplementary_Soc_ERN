@@ -5,7 +5,7 @@ stdResid <- function(data, model, return.data = T, bound = 2.5, plot = F, show.b
   
   data <- data %>% 
     # Compute standaridised residuals
-    mutate(st_R = as.numeric(scale(residuals( model, 'pearson' ))),
+    mutate(st_R = as.numeric(scale(residuals( model, type = 'pearson' ))),
            # Code cases as outliers if residual > bound
            Outlier = ifelse(abs(st_R) > bound, 1, 0))
   
