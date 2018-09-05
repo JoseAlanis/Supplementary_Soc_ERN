@@ -1,18 +1,18 @@
-stdResid <- function(data, model, return.data = T, bound = 2.5, scale = F, plot = F, show.bound = F, show.loess = F, ... ) {
+stdResid <- function(data, model, return.data = T, bound = 2.5, plot = F, show.bound = F, show.loess = F, ... ) {
   
   # Save model name for later
-  main <- deparse(substitute(model))
+  main <- deparse(model)
   
-  if (scale == T) {
+  if (grep('glmerMod', main)) {
     data <- data %>% 
-      # Compute standaridised residuals
-      mutate(st_R = as.numeric(scale(residuals( model, type = 'pearson' ))),
+      # Compute person residuals
+      mutate(st_R = as.numeric(residuals(model, type = 'pearson')),
              # Code cases as outliers if residual > bound
              Outlier = ifelse(abs(st_R) > bound, 1, 0))
   } else {
     data <- data %>% 
-      # Compute standaridised residuals
-      mutate(st_R = as.numeric(residuals( model, type = 'pearson' )),
+      # Compute scaled residuals
+      mutate(st_R = as.numeric(scale(residuals(model))),
              # Code cases as outliers if residual > bound
              Outlier = ifelse(abs(st_R) > bound, 1, 0))
   }
