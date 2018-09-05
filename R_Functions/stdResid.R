@@ -19,7 +19,7 @@ stdResid <- function(data, model, return.data = T, bound = 2.5, plot = F, show.b
 
   
   # summary of outlying cases
-  print(paste(round((sum(data$Outlier == 1) / sum(data$Outlier == 0))*100, digits = 2), 
+  print(paste(round((sum(data$Outlier == 1) / nrow(data))*100, digits = 2), 
               '% are outliers',  sep = ' '))
   
   # Plot residuals against fitted values
