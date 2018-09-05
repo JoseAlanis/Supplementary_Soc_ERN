@@ -3,16 +3,16 @@ stdResid <- function(data, model, return.data = T, bound = 2.5, plot = F, show.b
   # Save model name for later
   main <- deparse(model)
   
-  if (grep('glmerMod', main)) {
+  if (length(grep('glmerMod', main)) > 0 ) {
     data <- data %>% 
       # Compute person residuals
-      mutate(st_R = as.numeric(residuals(model, type = 'pearson')),
+      mutate(st_R = as.numeric(resid(model, type = 'pearson')),
              # Code cases as outliers if residual > bound
              Outlier = ifelse(abs(st_R) > bound, 1, 0))
   } else {
     data <- data %>% 
       # Compute scaled residuals
-      mutate(st_R = as.numeric(scale(residuals(model))),
+      mutate(st_R = as.numeric(scale(resid(model))),
              # Code cases as outliers if residual > bound
              Outlier = ifelse(abs(st_R) > bound, 1, 0))
   }
