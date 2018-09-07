@@ -1,9 +1,9 @@
 stdResid <- function(data, model, return.data = T, bound = 2.5, plot = F, show.bound = F, show.loess = F, ... ) {
   
   # Save model name for later
-  main <- deparse(model)
+  main <- class(model)
   
-  if (length(grep('glmerMod', main)) > 0 ) {
+  if (length( grep(paste(c('glmerMod', 'glm'), collapse="|"), main) ) > 0 ) {
     data <- data %>% 
       # Compute person residuals
       mutate(st_R = as.numeric(resid(model, type = 'pearson')),
