@@ -1,4 +1,4 @@
-data_summary <- function(x) {
+dataSummary <- function(x) {
   m <- median(x)
   ymin <- as.numeric(quantile(x, .25))
   ymax <- as.numeric(quantile(x, .75))
