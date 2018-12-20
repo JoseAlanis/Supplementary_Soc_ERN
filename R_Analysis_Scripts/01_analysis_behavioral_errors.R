@@ -177,6 +177,7 @@ options(contrasts = c("contr.sum","contr.poly"))
 contrasts(errors$group) <- contr.sum(2); contrasts(errors$group)
 contrasts(errors$flankers) <- contr.sum(4); contrasts(errors$flankers)
 
+
 # ***** ****** ***** ****** ***** ****** ***** ****** ***** ****** ***** ******
 # fit model with interaction, controlling for motivation
 # mod_err_inter <- glmer(data = errors,
@@ -232,7 +233,6 @@ anova(mod_errors_1)
 summary(mod_errors_1)
 # residuals ok?
 qqPlot(resid(mod_errors_1))
-plot_model(mod_errors_1, 'diag')
 
 # semi-partial r2
 ((3/149.161)*78.8424)/(1+((3/149.161)*78.8424))
@@ -248,19 +248,21 @@ anova(mod_err_inter, mod_errors) # Interaction doesn't improve the model
 # build table
 # create summary table for the fitted models
 tab_model(file = './revision/rev_tables/mod_errors.html',
-          mod_err_inter_1, mod_errors_1, digits.p = 3, show.aic = T, show.std = T, 
-          title = 'Table 1: Results of linear mixed effects regression analysis of error rates.',
+          mod_err_inter_1, mod_errors_1, digits = 2,
+          show.aic = T, 
+          collapse.ci = T,
+          title = 'Table S2: Results of linear mixed effects regression analysis of error rates.',
           CSS = list(css.thead = 'padding:0.1cm;'),
           dv.labels = c('Error rate', 'Error rate'),
           pred.labels = c('(Intercept)',
-                          'delta-Engagement',
-                          'Compatible',
-                          'Identical',
-                          'Incompatible',
+                          'Engagement',
+                          'Compatible (C)',
+                          'Identical (I)',
+                          'Incompatible (In)',
                           'Competition',
-                          'Compatible x Competition',
-                          'Identical x Competition',
-                          'Incompatible x Competition'))
+                          'C x Competition',
+                          'I x Competition',
+                          'In x Competition'))
 
 getPacks(c('emmeans'))
 # quick Plot
@@ -297,7 +299,7 @@ as.data.frame(est_group$contrasts)
 # CIs
 confint(est_group)
 
-# --- 8) Plot log estimates for trial type ------------------------------------
+# --- 8) Plot model estimates for trial type ------------------------------------
 # plot estimates
 err_p <- ggplot(data = as.data.frame(emmeans(mod_errors, ~ flankers)), 
                 aes(y = emmean, x = flankers)) + 
@@ -331,8 +333,8 @@ err_p <- ggplot(data = as.data.frame(emmeans(mod_errors, ~ flankers)),
         axis.title.y = element_text(size = 14, 
                                     color = 'black', 
                                     face = 'bold',  margin = margin(r = 15)),
-        axis.text.x = element_text(size = 13, 
-                                   color = 'black', angle = 90, vjust = .5, hjust = 1),
+        axis.text.x = element_text(size = 13, color = 'black', 
+                                   angle = 45, vjust = 0.5, hjust = 0.5),
         axis.text.y = element_text(size = 13, 
                                    color = 'black'),
         legend.position = 'none'); err_p
@@ -359,7 +361,7 @@ contrasts(errors_in$group) <- contr.sum(2); contrasts(errors_in$group)
 
 # # -- DON'T RUN --
 # #  ** use dummy coding to look at simple slopes **
-# contrasts(errors_in$group) <- contr.sum(2); contrasts(errors_in$group)
+# contrasts(errors_in$group) <- contr.treatment(2, base = 1); contrasts(errors_in$group)
 
 # fit a full model controlling for Motivation
 mod_full_err_in <- lm(data = errors_in, e_rate ~
@@ -377,7 +379,7 @@ car::Anova(mod_full_err_in_1, type = 'III')
 summary(mod_full_err_in_1)
 
 
-# fit the model with-out Motivation
+# fit the model with-out variable motivation
 mod_err_in <- lm(data = errors_in, e_rate ~
                          group*affiliation + group*agency)
 car::Anova(mod_err_in, type = 'III')
@@ -396,30 +398,32 @@ car::Anova(mod_err_in_1, type='III')
 summary(mod_err_in_1)
 # residulas ok?
 qqPlot(resid(mod_err_in_1))
-plot_model(mod_err_in_1, 'diag')
+tab_model(mod_err_in_1, show.std = T)
 
 # semi-partial r2
 sjstats::eta_sq(Anova(mod_err_in_1, type = 'III'), partial = F)
 
 # coefficent of detemination
 # R2m = only fixed effects, R2c = with random effects
-r.squaredGLMM(update(mod_full_err_in_1, nAGQ = 1)) # fit model by Laplace approximation
-r.squaredGLMM(update(mod_err_in_1, nAGQ = 1)) # fit model by Laplace approximation
+r.squaredGLMM(mod_full_err_in_1) 
+r.squaredGLMM(mod_err_in_1) 
 
 # compare models with and without interaction
 anova(mod_full_err_in, mod_err_in) # Interactions doesn't improve the model
 
 # table for model summary
 tab_model(file = './revision/rev_tables/mod_incomp_errors.html',
-          mod_full_err_in_1, mod_err_in_1, digits.p = 3, show.aic = T, show.std = T, 
-          title = 'Table 1: Results of linear regression analysis of error rates on incompatible trials.',
+          mod_full_err_in_1, mod_err_in_1, digits = 2,
+          show.aic = T, 
+          collapse.ci = T, 
+          title = 'Table S3: Results of linear regression analysis of error rates on incompatible trials.',
           CSS = list(css.thead = 'padding:0.1cm;'),
           dv.labels = c('Error rate', 'Error rate'),
           pred.labels = c('(Intercept)',
-                          'delta-Engagement',
+                          'Engagement',
                           'Competition',
-                          'affiliation',
-                          'agency',
+                          'Affiliation',
+                          'Agency',
                           'Competition x affiliation',
                           'Competition x agency'))
 
@@ -439,8 +443,7 @@ summary(emm_trend_SC, infer = T)
 
 # save Simple slopes of Agency
 emm_trend_MAE <- emtrends(mod_err_in_1, 
-                          var = 'agency', ~ 1,
-                          transform ='response')
+                          var = 'agency', ~ 1)
 
 # effect of Agency
 summary(emm_trend_MAE, infer = T)
@@ -487,7 +490,7 @@ plt_aff <- ggplot(data = data.frame(affiliation_means),
                      values=c("#DE4968FF", "#000004FF")) +
   
   labs(title = 'Simple slopes of Affiliation',
-       y = 'Estimated error rate',
+       y = 'Estimated error rate (imcomp. trials)',
        x = 'Levels of Affiliation') +
   
   geom_segment(aes(x = -Inf, y = 0, xend = -Inf, yend = .25), 
@@ -500,7 +503,8 @@ plt_aff <- ggplot(data = data.frame(affiliation_means),
         axis.text = element_text(color = 'black', size = 13), 
         axis.title.x = element_text(color = 'black', face = 'bold', size = 14, 
                                     margin = margin(t = 15)),
-        axis.title.y = element_text(color = 'black', size = 14),
+        axis.title.y = element_text(color = 'black', size = 14, face = 'bold',
+                                    margin = margin(r = 15)),
         plot.title = element_text(face = 'bold', hjust = .5),
         legend.title = element_blank(), 
         legend.text = element_text(size = 12),
