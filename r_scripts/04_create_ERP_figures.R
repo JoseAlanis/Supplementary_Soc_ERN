@@ -12,7 +12,7 @@ setwd('/Volumes/TOSHIBA/manuscrips_and_data/soc_ern/')
 source('./r_functions/getPacks.R')
 source('./r_functions/stdResid.R')
 source('./r_functions/dataSummary.R')
-# source('./r_functions/topoplot.R') # from package eegUtils
+source('./r_functions/topoplot.R') # from package eegUtils
 
 
 # Get helper function
