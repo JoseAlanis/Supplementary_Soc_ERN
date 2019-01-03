@@ -142,15 +142,15 @@ Ave_ERP <- plyr::ddply(ERP,
 
 
 # --- 5) Plot ∆ERN by electrode ------------------------------------------------
-# ----- Data to wide
+# --- Data to wide
 Ave_Elect_wide <- dcast(Ave_Elect, Time ~ Electrode,
                   value.var = c('M_Amp'))
-# ----- Compute GFP
+# --- Compute GFP
 Ave_Elect_wide$GFP <- apply(Ave_Elect_wide[, 2:65], 1, sd)
 Ave_Elect_long <- melt(Ave_Elect_wide, id.vars=c("Time"))
 names(Ave_Elect_long)[2:3] <- c('Electrode', 'Amplitude')
 
-# ----- Create ∆ERN wave by electrode plot
+# --- Create ∆ERN wave by electrode plot
 Ave_ro <- Ave_Elect_long %>% filter(Time >= 0 & Time <= 100) %>% 
   group_by(Electrode) %>% 
   dplyr::summarise(Mean_Amp = mean(Amplitude)) %>% 
@@ -215,19 +215,19 @@ elec_p <- ggplot(filter(Ave_Elect_long,
     legend.background = element_blank()); elec_p 
 
 
-# ----- Save the plot
+# --- Save the plot
 # cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S1a.pdf', 
 #                    elec_p, base_height = 5, base_width = 7)
 
-# ----- Calculate charthesian coordiantes
-# ----- for Mean ∆ERN topoplot
+# --- Calculate charthesian coordiantes
+# --- for Mean ∆ERN topoplot
 chanlocs$radianTheta <- pi/180*chanlocs$theta
 
 chanlocs <- chanlocs %>%
   mutate(x = .$radius*sin(.$radianTheta),
          y = .$radius*cos(.$radianTheta))
 
-# ----- Data for plot
+# --- Data for plot
 to_p <- merge(Ave_Elect_long, select(chanlocs, x, y, Electrode), 'Electrode')
 to_p <- select(to_p, Electrode, x, y, Time, Amplitude)
 to_p <- filter(to_p, Time >= 0 & Time <= 100)
@@ -236,13 +236,13 @@ names(to_p) <- gsub(names(to_p),
                     perl = TRUE,
                     replacement = '\\L\\1')
 
-# ----- CREATE THE PLOT
+# --- CREATE THE PLOT
 t_plot  <- topoplot(to_p, contour = T, 
                     chan_marker = 'none', 
                     palette = 'D', limits = c(-6.5,6.5),
                     grid_res = 100); t_plot
 
-# ----- ADD title
+# --- ADD title
 t_plot <- t_plot + 
   labs(title = 'Mean activity') + 
   theme(plot.title = element_text(hjust = .5, size = 19, face='bold'),
@@ -255,8 +255,8 @@ t_plot <- t_plot +
 
 
 
-# ----- 5) Plot ∆ERN Wave ---------------------------------
-# ----- CREATE the plot 
+# --- 6) Plot ∆ERN Wave --------------------------------------------------------
+# --- CREATE the plot 
 ERN_p <- ggplot(filter(Ave_ERN, Time >= -500), 
        
        aes(Time, M_Amp, fill = Group, color = Group, linetype = Group)) + 
@@ -315,8 +315,8 @@ ERN_p <- ggplot(filter(Ave_ERN, Time >= -500),
 #                    ERN_p, base_height = 5, base_width = 7)
 
 
-# ----- Calculate charthesian coordiantes
-# ----- for ∆ERN by group topoplot
+# --- Calculate charthesian coordiantes
+# --- for ∆ERN by group topoplot
 chanlocs$radianTheta <- pi/180*chanlocs$theta
 
 chanlocs <- chanlocs %>%
@@ -334,20 +334,20 @@ names(to_p) <- gsub(names(to_p),
                     replacement = '\\L\\1')
 names(to_p)[5] <- 'amplitude'
 
-# ----- CREATE the plot 
+# --- CREATE the plot 
 t_plot  <- topoplot(to_p, contour = T, 
                     chan_marker = 'none', 
                     palette = 'A', limits = c(-6.5,6.5),
                     grid_res = 100); t_plot
 
-# ----- ADD title
+# --- ADD title
 t_plot <- t_plot + 
   labs(title = 'Competition') + 
   theme(plot.title = element_text(hjust = .5, size = 17, face = 'bold'),
         legend.title = element_text(hjust = .5, size = 17, face = 'bold'),
         legend.text = element_text(size = 17)); t_plot
 
-# ----- SAVE the plot
+# --- SAVE the plot
 # cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4b1.pdf', 
 #                    t_plot, base_height = 4, base_width = 6)
 
@@ -362,7 +362,7 @@ names(to_p) <- gsub(names(to_p),
                     replacement = '\\L\\1')
 names(to_p)[5] <- 'amplitude'
 
-# ----- CREATE the plot 
+# --- CREATE the plot 
 t_plot  <- topoplot(to_p, contour = T, 
                     chan_marker = 'none', 
                     palette = 'A', limits = c(-6.5,6.5),
@@ -383,8 +383,8 @@ t_plot <- t_plot +
 
 
 
-# ----- 5) Plot ∆ERN ERP Image ----------------------------
-# ----- Arrange data frame accordint to electrodes amplitude
+# --- 7) Plot ∆ERN ERP Image ---------------------------------------------------
+# --- Arrange data frame accordint to electrodes amplitude
 Ave_ro <- Subj_ERN %>% filter(Time >= 0 & Time <= 100) %>% 
   group_by(Group, Subject) %>% 
   dplyr::summarise(Mean_Amp = mean(M_Amp)) %>% 
@@ -440,14 +440,14 @@ erp_ern <- erp_ern +
                                barwidth = 9,
                                barheight = 1.1)); erp_ern
 
-# ----- SAVE the plot
+# --- SAVE the plot
 # cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4c.pdf', 
 #                    erp_ern, base_height = 5, base_width = 7)
 
 
 
-# ----- 8) Plot ERPs --------------------------------------
-# ----- CREATE the plot
+# --- 8) Plot ERPs -------------------------------------------------------------
+# --- CREATE the plot
 ern_crn_erp <- ggplot(filter(Ave_ERP, Electrode == 'FCz', # <- select electrode to plot
               Time >= -500), 
        
@@ -504,7 +504,7 @@ ern_crn_erp <- ggplot(filter(Ave_ERP, Electrode == 'FCz', # <- select electrode 
     legend.position = "right"); ern_crn_erp
 
 
-# ----- SAVE the plot
+# --- SAVE the plot
 # cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_6a.pdf', 
 #                    ern_crn_erp, base_height = 5, base_width = 12)
 
@@ -565,13 +565,13 @@ ern_crn_erp <- ggplot(filter(Ave_ERP, Electrode == 'Cz', # <- select electrode t
     legend.position = "right"); ern_crn_erp
 
 
-# ----- SAVE the plot
+# --- SAVE the plot
 # cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_6b.pdf', 
 #                    ern_crn_erp, base_height = 5, base_width = 12)
 
 
 
-# # ------ 5) Prepare data for plot -----------------------------------
+# # ------ Prepare data for plot -----------------------------------
 # # Calculate charthesian coordiantes
 # chanlocs$radianTheta <- pi/180*chanlocs$theta
 # 
@@ -588,7 +588,7 @@ ern_crn_erp <- ggplot(filter(Ave_ERP, Electrode == 'Cz', # <- select electrode t
 #                     replacement = '\\L\\1')
 # names(to_p)[5] <- 'amplitude'
 # 
-# # ------ 5) Plot Topographical Plot -----------------------------------
+# # ------ Plot Topographical Plot -----------------------------------
 # t_plot  <- topoplot(to_p, contour = T, 
 #                     chan_marker = 'none', 
 #                     palette = 'B', limits = c(-8, 8), 
