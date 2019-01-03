@@ -1,17 +1,27 @@
-##### ##### #####     Analysis scrips for Alanis et al., 2018   ##### ##### #####
-#                             Plot ERPs and Topoplots
-#
+# --- author: jose c. garcia alanis
+# --- encoding: utf-8
+# --- r version: 3.5.1 (2018-07-02) -- "Feather Spray"
+# --- script version: Dez 2018
+# --- content: create erp figures
+
+# --- 1) set paths and get workflow functions ----------------------------------
+# path to project
+setwd('/Volumes/TOSHIBA/manuscrips_and_data/soc_ern/')
+
+# workflow functions
+source('./r_functions/getPacks.R')
+source('./r_functions/stdResid.R')
+source('./r_functions/dataSummary.R')
+# source('./r_functions/topoplot.R') # from package eegUtils
+
 
 # Get helper function
 source('./R_Functions/getPacks.R')
 source('~/Documents/r_functions/topoplot.R')
 
-# Load packages
-pkgs <- c('dplyr', 'plyr', 'reshape2', 
-          'ggplot2', 'viridis', 'cowplot', 'RColorBrewer')
-
-getPacks(pkgs)
-rm(pkgs)
+# load multiple packages necessary for analysis
+getPacks(c('dplyr', 'plyr', 'reshape2', 
+           'ggplot2', 'viridis', 'cowplot', 'RColorBrewer'))
 
 # Get electrode locations
 chanlocs <- read.table('./meta_dat/chanlocs_ftask.txt',
@@ -21,22 +31,21 @@ chanlocs <- read.table('./meta_dat/chanlocs_ftask.txt',
 names(chanlocs)[1] <- 'Electrode'
 
 
+# --- 2) Read in the data  -----------------------------------------------------
+load('./data_for_r/Incomp_ERPs.RData')
 
-# ----- 1) Read in the data  ------------------------------
-load('~/Documents/Experiments/soc_ftask/data_for_r/Incomp_ERPs.RData')
 
-
-# ----- 2) COMPUTE ∆ERN (incorrect-correct) ---------------
+# --- 3) COMPUTE ∆ERN (incorrect-correct) --------------------------------------
 # ----- From long to wide
 ERP_wide <- dcast(ERP, Subject + Group + Electrode + Time ~ Reaction,
                   value.var = c('Amplitude'))
 
-# ----- Compute ERN
+# --- Compute ERN
 ERP_wide <- ERP_wide %>% mutate(ERN = Incorrect - Correct)
 
 
 
-# ----- 3) Create data sets for plots ----------------------
+# --- 4) Create data sets for plots --------------------------------------------
 
 #  ****** This section will take a while
 #  ****** go get a coffee
@@ -132,7 +141,7 @@ Ave_ERP <- plyr::ddply(ERP,
 
 
 
-# ----- 4) Plot ∆ERN by electrode -------------------------
+# --- 5) Plot ∆ERN by electrode ------------------------------------------------
 # ----- Data to wide
 Ave_Elect_wide <- dcast(Ave_Elect, Time ~ Electrode,
                   value.var = c('M_Amp'))
@@ -336,7 +345,7 @@ t_plot <- t_plot +
   labs(title = 'Competition') + 
   theme(plot.title = element_text(hjust = .5, size = 17, face = 'bold'),
         legend.title = element_text(hjust = .5, size = 17, face = 'bold'),
-        legend.text = element_text(size = 17))
+        legend.text = element_text(size = 17)); t_plot
 
 # ----- SAVE the plot
 # cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4b1.pdf', 
@@ -364,7 +373,7 @@ t_plot <- t_plot +
   labs(title = 'Cooperation') + 
   theme(plot.title = element_text(hjust = .5, size = 17, face = 'bold'),
         legend.title = element_text(hjust = .5, size = 17, face = 'bold'),
-        legend.text = element_text(size = 17))
+        legend.text = element_text(size = 17)); t_plot
 
 # ----- SAVE the plot
 # cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4b2.pdf', 
@@ -429,7 +438,7 @@ erp_ern <- erp_ern +
   guides(fill = guide_colorbar(title.position = "top", 
                                title.hjust = .5, title.vjust = 1,
                                barwidth = 9,
-                               barheight = 1.1))
+                               barheight = 1.1)); erp_ern
 
 # ----- SAVE the plot
 # cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_4c.pdf', 
