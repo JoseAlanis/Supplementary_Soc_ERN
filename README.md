@@ -8,5 +8,5 @@ The Repo contains the following files:
 
 - `README.md`, it provides generall infomration on the Repo and it's purpose.
 - `Sessioninfo.txt`, information about R packages and package versions used for data analyses.
-- `R_Analysis_Scripts`, directory containing all R scripts used for data analyses.
+- `r_scripts`, directory containing all R scripts used for data analyses.
 - `R_Functions`, directory containing custom R functions used to improve workflow during data analyses.
