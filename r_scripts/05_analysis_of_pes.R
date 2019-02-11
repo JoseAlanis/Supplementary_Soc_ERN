@@ -6,12 +6,13 @@
 
 # --- 1) set paths and get workflow functions ----------------------------------
 # path to project
-setwd('/Volumes/TOSHIBA/manuscrips_and_data/soc_ern/')
+setwd('/Volumes/TOSHIBA/manuscripts_and_data/soc_ern/')
 
 # workflow functions
 source('./r_functions/getPacks.R')
 source('./r_functions/stdResid.R')
 source('./r_functions/overDisp.R')
+source('./r_functions/spR2.R')
 source('./r_functions/dataSummary.R')
 
 # load multiple packages necessary for analysis
@@ -68,21 +69,21 @@ PES <- PES %>%
 # summarise
 # correct rt
 PES_sum <- PES %>% 
-  group_by(id, flankers, group, trial_index) %>%
-  summarise(mean_rt = mean(rt),
+  dplyr::group_by(id, flankers, group, trial_index) %>%
+  dplyr::summarise(mean_rt = mean(rt),
             mean_corr_rt = unique(m_corr_rt),
             mean_amp = mean(m_amp))
 # error amp
 errors <- PES_sum %>% 
-  filter(trial_index == 'Error') %>%
-  group_by(id) %>%
-  summarise(err_amp = mean(mean_amp)) %>%
-  select(id, err_amp)
+  dplyr::filter(trial_index == 'Error') %>%
+  dplyr::group_by(id) %>%
+  dplyr::summarise(err_amp = mean(mean_amp)) %>%
+  dplyr::select(id, err_amp)
 # post error rt
 corrects_post_error <- PES_sum %>% 
-  filter(trial_index == 'Correct post-error') %>%
-  mutate(pes = mean_rt - mean_corr_rt) %>%
-  select(id, flankers, group, pes)
+  dplyr::filter(trial_index == 'Correct post-error') %>%
+  dplyr::mutate(pes = mean_rt - mean_corr_rt) %>%
+  dplyr::select(id, flankers, group, pes)
   
 PES <- merge(corrects_post_error, errors, 'id')
 
@@ -106,8 +107,11 @@ options(contrasts = c("contr.sum","contr.poly"))
 contrasts(PES$group) <- contr.sum(2); contrasts(PES$group)
 contrasts(PES$flankers) <- contr.sum(4); contrasts(PES$flankers)
 
+# descriptives
 mean(PES$err_amp)
 sd(PES$err_amp)
+
+# center ERN-amplitude around zero
 PES <- within( PES, {
   err_amp <- err_amp - mean(err_amp, na.rm = T) 
 })
@@ -135,6 +139,26 @@ confint(mod_pes_1)
 
 # summary
 tab_model(mod_pes_1, show.std = T)
+
+# # UNCOMMENT TO FIT OLS
+# # --- LMER model is probably overfitted --> fit with OLS ---
+# # fit OLS model
+# mod_pes <- lm(data = PES, pes ~ flankers +  agency + 
+#                   err_amp + group*affiliation)
+# car::Anova(mod_pes, type=3, test='F')
+# summary(mod_pes)
+# plot(mod_pes)
+# 
+# # remove outliers
+# pes_rm <- stdResid(data = PES, model = mod_pes, plot = T, show.bound = T)
+# 
+# # Re-fit model without outliers
+# mod_pes_1 <- lm(data = filter(pes_rm, Outlier == 0),  
+#                   pes ~ flankers +  agency + 
+#                   err_amp + group*affiliation)
+# car::Anova(mod_pes_1, type=3, test='F') # basically the same results.
+# summary(mod_pes_1)
+# plot(mod_pes_1) # diagnostics look good
 
 # ----- 4) Follow-up analyses ---------
 emm_options(lmerTest.limit = 2000)
