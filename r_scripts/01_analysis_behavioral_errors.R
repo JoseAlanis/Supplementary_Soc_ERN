@@ -6,12 +6,13 @@
 
 # --- 1) set paths and get workflow functions ----------------------------------
 # path to project
-setwd('/Volumes/TOSHIBA/manuscrips_and_data/soc_ern/')
+setwd('/Volumes/TOSHIBA/manuscripts_and_data/soc_ern/')
 
 # workflow functions
 source('./r_functions/getPacks.R')
 source('./r_functions/stdResid.R')
 source('./r_functions/overDisp.R')
+source('./r_functions/spR2.R')
 source('./r_functions/dataSummary.R')
 
 # load multiple packages necessary for analysis
@@ -234,8 +235,10 @@ summary(mod_errors_1)
 # residuals ok?
 qqPlot(resid(mod_errors_1))
 
-# semi-partial r2
-((3/149.161)*78.8424)/(1+((3/149.161)*78.8424))
+# compute effect sizes (semi partial R2) from anova table
+amod <- anova(mod_errors_1); amod
+amod <-  as.data.frame(amod); amod
+amod$sp.R2 <- spR2(amod); amod
 
 # coefficents of detemination
 # R2m = only fixed effects, R2c = with random effects
@@ -264,15 +267,15 @@ tab_model(file = './revision/rev_tables/mod_errors.html',
                           'I x Competition',
                           'In x Competition'))
 
-getPacks(c('emmeans'))
-# quick Plot
-err_eff <- emmip(mod_errors_1, ~ flankers, CIs = T, 
-                 lmer.df = 'satterthwaite')
-err_eff + coord_cartesian(ylim = c(0, .2))
 
 # --- 7) Pairwise contrasts for error model ---------------------
 # load Packages
 getPacks(c('emmeans'))
+
+# quick Plot
+err_eff <- emmip(mod_errors_1, ~ flankers, CIs = T, 
+                 lmer.df = 'satterthwaite')
+err_eff + coord_cartesian(ylim = c(0, .2))
 
 # group estimates
 group_err <- emmeans(mod_errors_1, pairwise ~ group,
@@ -288,7 +291,6 @@ est_err
 as.data.frame(est_err$contrasts)
 # and CIs
 confint(est_err)
-
 
 # save group estimates
 est_group <- emmeans(mod_errors_1, pairwise ~ group,
@@ -540,7 +542,3 @@ plot(mod_err_RT)
 
 # compute CIs
 confint(mod_err_RT)
-
-
-
-
