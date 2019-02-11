@@ -14,11 +14,6 @@ source('./r_functions/stdResid.R')
 source('./r_functions/dataSummary.R')
 source('./r_functions/topoplot.R') # from package eegUtils
 
-
-# Get helper function
-source('./R_Functions/getPacks.R')
-source('~/Documents/r_functions/topoplot.R')
-
 # load multiple packages necessary for analysis
 getPacks(c('dplyr', 'plyr', 'reshape2', 
            'ggplot2', 'viridis', 'cowplot', 'RColorBrewer'))
@@ -42,7 +37,6 @@ ERP_wide <- dcast(ERP, Subject + Group + Electrode + Time ~ Reaction,
 
 # --- Compute ERN
 ERP_wide <- ERP_wide %>% mutate(ERN = Incorrect - Correct)
-
 
 
 # --- 4) Create data sets for plots --------------------------------------------
@@ -247,7 +241,7 @@ t_plot <- t_plot +
   labs(title = 'Mean activity') + 
   theme(plot.title = element_text(hjust = .5, size = 19, face='bold'),
         legend.title = element_text(hjust = .5, size = 19, face='bold'),
-        legend.text = element_text(size = 18))
+        legend.text = element_text(size = 18)); t_plot
 
 
 # cowplot::save_plot('~/Documents/Experiments/soc_ftask/paper_figs/Fig_S1b.pdf', 
