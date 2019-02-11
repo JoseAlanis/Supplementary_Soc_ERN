@@ -1,10 +1,10 @@
-R version 3.4.4 (2018-03-15)
+R version 3.5.1 (2018-07-02)
 Platform: x86_64-apple-darwin15.6.0 (64-bit)
 Running under: macOS Sierra 10.12.6
 
 Matrix products: default
 BLAS: /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib
-LAPACK: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRlapack.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/3.5/Resources/lib/libRlapack.dylib
 
 locale:
 [1] de_DE.UTF-8/de_DE.UTF-8/de_DE.UTF-8/C/de_DE.UTF-8/de_DE.UTF-8
@@ -13,23 +13,17 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
- [1] bindrcpp_0.2       cowplot_0.9.2      sjPlot_2.4.1       viridis_0.5.1      viridisLite_0.3.0  ggplot2_2.2.1.9000 MuMIn_1.40.4      
- [8] car_2.1-6          emmeans_1.1.2      effects_4.0-0      carData_3.0-0      lmerTest_2.0-36    lme4_1.1-15        Matrix_1.2-12     
-[15] reshape2_1.4.3     dplyr_0.7.4       
+ [1] RColorBrewer_1.1-2 cowplot_0.9.3      reshape2_1.4.3     plyr_1.8.4         tidyr_0.8.2        emmeans_1.3.0      MuMIn_1.42.1       car_3.0-2          carData_3.0-2     
+[10] sjPlot_2.6.1       lmerTest_3.0-1     lme4_1.1-19        Matrix_1.2-15      bindrcpp_0.2.2     viridis_0.5.1      viridisLite_0.3.0  ggplot2_3.1.0      dplyr_0.7.8       
 
 loaded via a namespace (and not attached):
-  [1] TH.data_1.0-8       minqa_1.2.4         colorspace_1.3-2    modeltools_0.2-21   sjlabelled_1.0.8    estimability_1.3    snakecase_0.9.1    
-  [8] htmlTable_1.11.2    base64enc_0.1-3     rstudioapi_0.7      glmmTMB_0.2.0       MatrixModels_0.4-1  DT_0.4              mvtnorm_1.0-7      
- [15] coin_1.2-2          codetools_0.2-15    splines_3.4.4       mnormt_1.5-5        knitr_1.20          sjmisc_2.7.1        bayesplot_1.4.0    
- [22] Formula_1.2-2       nloptr_1.0.4        ggeffects_0.3.2     pbkrtest_0.4-7      broom_0.4.4         cluster_2.0.6       shiny_1.0.5        
- [29] compiler_3.4.4      sjstats_0.14.2-2    backports_1.1.2     assertthat_0.2.0    lazyeval_0.2.1      survey_3.33-2       cli_1.0.0          
- [36] acepack_1.4.1       htmltools_0.3.6     quantreg_5.35       tools_3.4.4         coda_0.19-1         gtable_0.2.0        glue_1.2.0         
- [43] merTools_0.3.0      Rcpp_0.12.16        nlme_3.1-131.1      psych_1.8.3.3       lmtest_0.9-35       stringr_1.3.0       mime_0.5           
- [50] stringdist_0.9.4.7  MASS_7.3-49         zoo_1.8-1           scales_0.5.0.9000   parallel_3.4.4      sandwich_2.4-0      SparseM_1.77       
- [57] pwr_1.2-2           TMB_1.7.13          RColorBrewer_1.1-2  yaml_2.1.18         gridExtra_2.3       rpart_4.1-13        latticeExtra_0.6-28
- [64] stringi_1.1.7       blme_1.0-4          checkmate_1.8.5     rlang_0.2.0.9001    pkgconfig_2.0.1     arm_1.9-3           lattice_0.20-35    
- [71] purrr_0.2.4         prediction_0.2.0    bindr_0.1.1         htmlwidgets_1.0     tidyselect_0.2.4    plyr_1.8.4          magrittr_1.5       
- [78] R6_2.2.2            Hmisc_4.1-1         multcomp_1.4-8      pillar_1.2.1        haven_1.1.1         foreign_0.8-69      withr_2.1.2        
- [85] mgcv_1.8-23         survival_2.41-3     abind_1.4-5         nnet_7.3-12         tibble_1.4.2        modelr_0.1.1        crayon_1.3.4       
- [92] utf8_1.1.3          grid_3.4.4          data.table_1.10.4-3 forcats_0.3.0       digest_0.6.15       xtable_1.8-2        tidyr_0.8.0        
- [99] httpuv_1.3.6.2      stats4_3.4.4        munsell_0.4.3      
+ [1] nlme_3.1-137       pbkrtest_0.4-7     numDeriv_2016.8-1  tools_3.5.1        TMB_1.7.15         backports_1.1.3    utf8_1.1.4         R6_2.3.0           sjlabelled_1.0.15 
+[10] lazyeval_0.2.1     colorspace_1.3-2   withr_2.1.2        mnormt_1.5-5       tidyselect_0.2.5   gridExtra_2.3      curl_3.3           compiler_3.5.1     cli_1.0.1         
+[19] sandwich_2.5-0     labeling_0.3       scales_1.0.0       psych_1.8.10       mvtnorm_1.0-8      ggridges_0.5.1     digest_0.6.18      pbdZMQ_0.3-3       stringr_1.3.1     
+[28] foreign_0.8-70     minqa_1.2.4        rio_0.5.16         stringdist_0.9.5.1 pkgconfig_2.0.2    pwr_1.2-2          rlang_0.3.1        readxl_1.2.0       rstudioapi_0.9.0  
+[37] bindr_0.1.1        generics_0.0.2     zoo_1.8-4          zip_1.0.0          magrittr_1.5       modeltools_0.2-22  bayesplot_1.6.0    Rcpp_1.0.0         munsell_0.5.0     
+[46] fansi_0.4.0        abind_1.4-5        prediction_0.3.6   stringi_1.2.4      multcomp_1.4-8     yaml_2.2.0         snakecase_0.9.2    MASS_7.3-50        grid_3.5.1        
+[55] parallel_3.5.1     sjmisc_2.7.6       forcats_0.3.0      crayon_1.3.4       lattice_0.20-35    ggeffects_0.7.0    haven_2.0.0        splines_3.5.1      sjstats_0.17.2    
+[64] hms_0.4.2          knitr_1.21         pillar_1.3.1       estimability_1.3   codetools_0.2-15   stats4_3.5.1       glue_1.3.0         data.table_1.11.8  modelr_0.1.2      
+[73] nloptr_1.2.1       cellranger_1.1.0   gtable_0.2.0       purrr_0.2.5        assertthat_0.2.0   xfun_0.4           openxlsx_4.1.0     coin_1.2-2         xtable_1.8-3      
+[82] broom_0.5.1        coda_0.19-2        survival_2.42-3    tibble_2.0.0       glmmTMB_0.2.2.0    TH.data_1.0-9 
