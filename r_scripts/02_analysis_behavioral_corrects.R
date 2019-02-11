@@ -6,12 +6,13 @@
 
 # --- 1) Set paths and get workflow functions ----------------------------------
 # path to project
-setwd('/Volumes/TOSHIBA/manuscrips_and_data/soc_ern/')
+setwd('/Volumes/TOSHIBA/manuscripts_and_data/soc_ern/')
 
 # workflow functions
 source('./r_functions/getPacks.R')
 source('./r_functions/stdResid.R')
 source('./r_functions/overDisp.R')
+source('./r_functions/spR2.R')
 source('./r_functions/dataSummary.R')
 
 # Install and load multiple R packages necessary for analysis.
@@ -51,7 +52,7 @@ data_corrects$flankers <- firstup(as.character(data_corrects$flankers))
 data_corrects$flankers <- as.factor(data_corrects$flankers)
 
 # summarise for later
-as.data.frame(corrects %>% group_by(flankers) %>% 
+as.data.frame(data_corrects %>% group_by(flankers) %>% 
   summarise(RT = mean(M_RT), sd = sd(M_RT)))
 
 # merge wich errors
@@ -142,6 +143,7 @@ mod_full_1 <- lmer(data = filter(c_rm, Outlier == 0),
                    REML = F)
 # anova table
 anova(mod_full_1)
+# model summary
 tab_model(mod_full_1)
 
 
@@ -187,13 +189,10 @@ qqPlot(resid(mod_corrects_1))
 # model table
 tab_model(mod_corrects_1, show.std = T)
 
-# Semi-partial r2
-((1/75.763)*0.5828)/(1+((1/75.763)*0.5828)) # context
-((1/75.688)*0.9255)/(1+((1/75.688)*0.9255))
-((1/75.704)*2.7196)/(1+((1/75.704)*2.7196))
-((1/223.824)*190.0878)/(1+((1/223.824)*190.0878)) # flankers
-((1/75.983)*44.7098)/(1+((1/75.983)*44.7098)) # error rate
-((1/75.756)*5.8851)/(1+((1/75.756)*5.8851)) # d motivation
+# compute effect sizes (semi partial R2) from anova table
+amod <- anova(mod_corrects_1); amod
+amod <-  as.data.frame(amod); amod
+amod$sp.R2 <- spR2(amod); amod
 
 # table for model summary
 tab_model(file = './revision/rev_tables/mod_corrects.html',
@@ -288,6 +287,7 @@ ggsave(corr_p,
 # desciptives
 errors %>% summarise(sd_err = sd(overall_e_rate), sd_motiv = sd(d_motivation))
 
+# slope of error rate
 err_slope <- emmeans(mod_corrects_1, pairwise ~ total_error_rate,
                        at = list(total_error_rate = c(-0.05, 0.05), 
                                  d_motivation = 0,
@@ -340,8 +340,7 @@ ggsave(plt_err,
        filename = './paper_figs/Fig_3c.pdf', 
        device = 'pdf',  width = 4, height = 5)
 
-
-
+# slope of motivation
 motiv_slope <- emmeans(mod_corrects_1, pairwise ~ d_motivation,
                        at = list(total_error_rate = 0, 
                                  d_motivation = c(-2, 2),
