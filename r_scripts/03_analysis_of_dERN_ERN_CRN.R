@@ -6,12 +6,13 @@
 
 # --- 1) Set paths and get workflow functions ----------------------------------
 # path to project
-setwd('/Volumes/TOSHIBA/manuscrips_and_data/soc_ern/')
+setwd('/Volumes/TOSHIBA/manuscripts_and_data/soc_ern/')
 
 # workflow functions
 source('./r_functions/getPacks.R')
 source('./r_functions/stdResid.R')
 source('./r_functions/overDisp.R')
+source('./r_functions/spR2.R')
 source('./r_functions/dataSummary.R')
 source('./r_functions/topoplot.R')
 
@@ -344,11 +345,10 @@ anova(mod_ern_full_0, mod_ern_0)
 # R2m = only fixed effects, R2c = with random effects
 r.squaredGLMM(mod_ern)
 
-# effect sizes for predictors
-# (NumDF / DenDF x F value) / 1 + (NumDF / DenDF x F value)
-((1/75.914)*5.0784)/(1+((1/75.914)*5.0784)) # group
-((1/76.039)*6.9260)/(1+((1/76.039)*6.9260)) # affiliation
-((1/75.914)*6.6620)/(1+((1/75.914)*6.6620)) # agency x group
+# compute effect sizes (semi partial R2) from anova table
+amod <- anova(mod_ern); amod
+amod <-  as.data.frame(amod); amod
+amod$sp.R2 <- spR2(amod); amod
 
 # descriptives
 as.data.frame(id_ave %>% dplyr::group_by(group) %>% 
@@ -656,11 +656,10 @@ tab_model(file = './revision/rev_tables/mod_ERN_CRN.html',
                           'Error x comp x aff',
                           'Error x comp x ag'))
 
-# effect sizes for predictors
-((1/75.858)*259.3139)/(1+((1/75.858)*259.3139)) # reaction
-((1/75.858)*5.6322)/(1+((1/75.858)*5.6322)) # reaction x group
-((1/76.005)*5.5773)/(1+((1/76.005)*5.5773)) # affiliatio
-((1/75.933)*7.4553)/(1+((1/75.933)*7.4553)) # reaction x group x agency
+# compute effect sizes (semi partial R2) from anova table
+amod <- anova(mod_response_full); amod
+amod <-  as.data.frame(amod); amod
+amod$sp.R2 <- spR2(amod); amod
 
 # descriptives
 as.data.frame(response_ave %>% dplyr::group_by(reaction) %>% 
