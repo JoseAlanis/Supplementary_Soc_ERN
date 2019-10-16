@@ -1,6 +1,6 @@
 # Supplementary_Soc_ERN
 
-This Repo contains **supplementary materials** and **analysis scrips** for the manuscript _Social context effects on error-related brain activity are dependent on interpersonal and achievement-related traits_ by José C. García Alanis, Travis E. Baker, Martin Peper, and Mira-Lynn Chavanon (submitted, 2018)
+This Repo contains **supplementary materials** and **analysis scrips** for the manuscript _Social context effects on error-related brain activity are dependent on interpersonal and achievement-related traits_ by José C. García Alanis, Travis E. Baker, Martin Peper, and Mira-Lynn Chavanon (Scientific Reports, 2019). [doi.org/10.1038/s41598-018-38417-2](https://doi.org/10.1038/s41598-018-38417-2)
 
 ## What's in this Repo?
 
