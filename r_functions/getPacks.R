@@ -1,12 +1,13 @@
-getPacks <- function( packs ) {
+getPacks <- function(packages) {
   
-  # Check wich packages are not intalled and install them
-  if ( sum(!packs %in% installed.packages()[, 'Package'])) {
-    install.packages( packs[ which(!packs %in% installed.packages()[, 'Package']) ], 
-                      dependencies = T)
+  # list of packages missing
+  not_installed <- which(!packages %in% installed.packages()[, 'Package'])
+  
+  # check wich packages are not intalled and install them
+  if (length(not_installed)) {
+    install.packages(packages[not_installed], dependencies = T)
   }
   
-  # Require all packages
-  sapply(packs, require, character.only =  T)
-  
+  # load all packages
+  sapply(packages, require, character.only = T)
 }
