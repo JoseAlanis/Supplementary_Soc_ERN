@@ -8,7 +8,6 @@
 # workflow functions
 source('./r_functions/getPacks.R')
 source('./r_functions/stdResid.R')
-source('./r_functions/overDisp.R')
 source('./r_functions/spR2.R')
 source('./r_functions/dataSummary.R')
 
