@@ -1,13 +1,10 @@
 # --- author: jose c. garcia alanis
 # --- encoding: utf-8
-# --- r version: 3.5.1 (2018-07-02) -- "Feather Spray"
-# --- script version: Dez 2018
+# --- r version: 4.0.1 (2020-06-06) -- "See Things Now"
+# --- script version: Jun 2020
 # --- content: analysis of error rates
 
-# --- 1) set paths and get workflow functions ----------------------------------
-# path to project
-setwd('/Volumes/TOSHIBA/manuscripts_and_data/soc_ern/')
-
+# --- 1) load workflow functions and necessary packages ------------------------
 # workflow functions
 source('./r_functions/getPacks.R')
 source('./r_functions/stdResid.R')
@@ -15,34 +12,23 @@ source('./r_functions/overDisp.R')
 source('./r_functions/spR2.R')
 source('./r_functions/dataSummary.R')
 
-# load multiple packages necessary for analysis
-getPacks(c('dplyr', 'ggplot2', 'viridis'))
-
+# load packages
+getPacks(c('dplyr', 'ggplot2', 'viridis', 'sjPlot'))
 
 # --- 2) Import data -----------------------------------------------------------
-# personality data
-perso <- read.table('./data_for_r/all_perso.txt', 
+errors <- read.table('../data/behavioral/behavioral_errors.txt',
                     header = T)
-unique(perso$id)
-# summarise (for later)
-perso %>% summarise_if(is.numeric, sd)
 
-# data frame containing behavioural errors
-load('./data_for_r/errors_data.RData')
-unique(errors_data$id)
-# merge data frames
-errors <- merge(errors_data, perso, 'id'); rm(errors_data, perso)
-
-# --- 3) Create plots for descriptive data -------------------------------------
-# distribution of number of errors
-ggplot(errors, aes(e_rate, fill = flankers)) +
+################################################################################
+# 3) Descriptives --------------------------------------------------------------
+# Plot distribution of number of errors
+error_dist_plot <- ggplot(errors,
+                          aes(x = error_rate_p_conditon,
+                              fill = flankers)) +
   
-  geom_histogram(color = 'black', bins = 12) + 
+  geom_histogram(color = 'black', bins = 20) +
   facet_wrap(~ flankers, scales = 'free') +
-  
-  scale_x_continuous(limits = c(0, .5)) +
-  scale_y_continuous(limits = c(0, 33)) +
-  
+
   labs(x = '\n Error rate', y = 'Incidence \n') + 
   
   geom_segment(aes(x = -Inf, y = 0, xend = -Inf, yend = 30), 
@@ -58,19 +44,23 @@ ggplot(errors, aes(e_rate, fill = flankers)) +
                                   face = 'bold'),
         axis.title.x = element_text(size = 14, 
                                     color = 'black',
-                                    face = 'bold', hjust = .2),
+                                    face = 'bold', hjust = 0.5),
         axis.title.y = element_text(size = 14, 
                                     color = 'black', 
-                                    face = 'bold', hjust = .15),
+                                    face = 'bold', hjust = 0.5),
         axis.text = element_text(size = 11, 
                                  color = 'black'),
         legend.position = 'none') + 
-  geom_rug()
-
+  geom_rug(); error_dist_plot
+ggsave(error_dist_plot,
+       filename = './results/figures/distribution_of_errors.pdf',
+       device = 'pdf',  width = 10, height = 8)
 
 # violin plot for manuscript
 err_box <-  ggplot(errors, 
-                   aes(x = flankers, y = e_rate, color = flankers)) +
+                   aes(x = flankers,
+                       y = error_rate_p_conditon,
+                       color = flankers)) +
   
   geom_violin(fill = NA, 
               color='black', trim = T) + 
@@ -106,59 +96,75 @@ err_box <-  ggplot(errors,
 
 # save plot
 ggsave(err_box, 
-       filename = './paper_figs/Fig_2a.pdf', 
+       filename = './results/figures/Fig_2a.pdf',
        device = 'pdf',  width = 4, height = 5)
 
 
-# --- 4) Compute descriptive statistics  --------------------------------------
-# errors overall
-errors %>% dplyr::summarise(M_errors = mean(t_errors), 
-                            SD_errors  = sd(t_errors), 
+# Compute descriptive statistics
+# means and sd for overall number of errors
+errors %>% dplyr::summarise(M_errors = mean(total_nr_of_errors),
+                            SD_errors  = sd(total_nr_of_errors),
                             
-                            M_error_rate = mean(overall_e_rate), 
-                            SD_error_rate  = sd(overall_e_rate)
-                            )
+                            M_error_rate = mean(error_rate_overall),
+                            SD_error_rate  = sd(error_rate_overall)
+                            )  %>%
+  tab_df(title = 'Means and sd for errors (obverall)',
+         file = './results/tables/errors_overall.html')
 
-# errors by group
-errors %>% dplyr::group_by(group) %>% 
-  dplyr::summarise(M = mean(t_errors), 
-            SD = sd(t_errors), 
-            SE = sd(t_errors) / sqrt(sum(!is.na(t_errors))))
+# means and sd for errors by group
+errors %>% dplyr::group_by(group) %>%
+  dplyr::summarise(M = mean(total_nr_of_errors),
+            SD = sd(total_nr_of_errors),
+            SE = sd(total_nr_of_errors) / sqrt(sum(!is.na(total_nr_of_errors)))) %>%
+  tab_df(title = 'Means and sd for errors by group',
+         file = './results/tables/errors_by_group.html')
 
-# errors by flankers
-as.data.frame(errors %>% dplyr::group_by(flankers) %>% 
-                dplyr::summarise(M = mean(e_rate), 
-                                 SD = sd(e_rate), 
-                                 SE = sd(e_rate) / sqrt(sum(!is.na(e_rate))), 
-                                 Min = min(e_rate), Max = max(e_rate)))
+# means and sd for error rates by flankers
+errors %>% dplyr::group_by(flankers) %>%
+  dplyr::summarise(M = mean(error_rate_p_conditon),
+                   SD = sd(error_rate_p_conditon),
+                   SE = sd(error_rate_p_conditon) / sqrt(sum(!is.na(error_rate_p_conditon))),
+                   Min = min(error_rate_p_conditon),
+                   Max = max(error_rate_p_conditon)) %>%
+  tab_df(title = 'Means and sd for errors by flankers',
+         file = './results/tables/errors_by_flankers.html')
 
-# --- 5) Set up and fit the "full model" ---------------------------------------
+
+################################################################################
+# 4) Statistical analysis ------------------------------------------------------
+# *** Set up and fit the "full model" ***
 
 # # For completness, we document the results of a "full model", which 
-# # included all higher order interactions. However, interpreting 
-# # the estimates of the full model might be complicated. The more 
-# # parsimonious models described in sections 7) and 7) show the same
+# # included all higher order interactions.
+# # However, interpreting the estimates of the full model might be complicated.
+# # The more parsimonious models described in the sections below show the same
 # # results and their interpretation is straight foward.
-# # Uncomment and run this section to fit the full model.
 
 # load Packages
 getPacks(c('lme4', 'lmerTest', 'sjPlot', 'car', 'MuMIn'))
 
 # -- change default contrasts options ! --
-options(contrasts = c("contr.sum","contr.poly"))
+options(contrasts = c("contr.sum", "contr.poly"))
 
-# (UNCOMENT TO RUN):
 # DUMMY CODE cathegorical predictors
+errors$group <- as.factor(errors$group)
 contrasts(errors$group) <- contr.sum(2); contrasts(errors$group)
+
+errors$flankers <- as.factor(errors$flankers)
 contrasts(errors$flankers) <- contr.sum(4); contrasts(errors$flankers)
 
 # ** fit full model including all variables and interactions **
 mod_err_full <-  lmer(data = errors,
-                      e_rate ~ d_motivation + group*flankers*agency +
-                        group*flankers*affiliation + (1|id), 
+                      error_rate_p_conditon ~
+                        diff_in_motivivation_centred + group*flankers*MAE_centred +
+                        group*flankers*SC_centred + (1|id),
                       REML = F)
-# anova table
-anova(mod_err_full)
+# Anova table
+anova_full <- anova(mod_err_full)
+tab_df(cbind(row.names(anova_full), as.data.frame(anova_full)), digits = 5,
+       title = 'ANOVA table for "full-model" of error rates (not reported)',
+       file = './results/tables/ANOVA_full_mod_errors.html')
+
 # residuals ok?
 qqPlot(resid(mod_err_full))
 
@@ -167,72 +173,73 @@ qqPlot(resid(mod_err_full))
 r.squaredGLMM(update(mod_err_full))
 
 
-# --- 6) Set up and fit reported models  ---------------------------------------
+# ------------------------------------------------------------------------------
+# *** Set up and fit reported models ***
 # load Packages
 getPacks(c('lme4', 'lmerTest', 'sjPlot', 'car', 'MuMIn'))
 
 # -- change default contrasts options ! --
-options(contrasts = c("contr.sum","contr.poly"))
+options(contrasts = c("contr.sum", "contr.poly"))
 
 # fffect code cathegorical predictors 
 contrasts(errors$group) <- contr.sum(2); contrasts(errors$group)
 contrasts(errors$flankers) <- contr.sum(4); contrasts(errors$flankers)
 
-
-# ***** ****** ***** ****** ***** ****** ***** ****** ***** ****** ***** ******
-# fit model with interaction, controlling for motivation
-# mod_err_inter <- glmer(data = errors,
-#                        e_rate ~ d_motivation + flankers*group + (1|id),
-#                        family = poisson(link = 'log'),
-#                        control = glmerControl(optimizer='bobyqa'), 
-#                        nAGQ = 20)
-
+# Test social context by flakers interaction
 # fit model controllig for motivation
 mod_err_inter <- lmer(data = errors,
-                      e_rate ~ d_motivation + 
-                        flankers*group + flankers*group + (1|id),
+                      error_rate_p_conditon ~
+                        diff_in_motivivation_centred + flankers*group + (1|id),
                       REML = F)
-# nova table
-anova(mod_err_inter)
+# Anova table
+anova_inter <- anova(mod_err_inter)
+tab_df(cbind(row.names(anova_inter), as.data.frame(anova_inter)), digits = 5,
+       title = 'ANOVA table for "interaction-model" of error rates',
+       file = './results/tables/ANOVA_intreaction_mod_errors.html')
 
 # Compute resiudals and detect outliers
 er_rm <- stdResid(data = errors, 
                   model = mod_err_inter, 
                   plot = T, show.bound = T)
 
-# Re-fit without outliers
+# In order to test the effect of outliers, re-fit the model without outliers
+# (model does not change)
 mod_err_inter_1 <- lmer(data = filter(er_rm, Outlier == 0),
-                        e_rate ~ d_motivation + flankers*group + flankers*group + (1|id),
+                        error_rate_p_conditon ~
+                        diff_in_motivivation_centred + flankers*group + (1|id),
                         REML = F)
 
 # Anova table and model summary
 anova(mod_err_inter_1)
-# Residuals ok?
+# Residuals ok? They look ok
 qqPlot(resid(mod_err_inter_1))
+# further model diagnostics (not too bad)
 plot_model(mod_err_inter_1, 'diag')
 
-# ***** ****** ***** ****** ***** ****** ***** ****** ***** ****** ***** ******
-# fit model without interaction
-mod_errors <- lmer(data = errors, 
-                    e_rate ~ flankers + group + (1|id), 
+
+# ------------------------------------------------------------------------------
+# Since interaction and motivation were not significant:
+# dro those terms, re-fit the model and see
+# if effects change.
+mod_errors <- lmer(data = errors,
+                   error_rate_p_conditon ~ flankers + group + (1|id),
                    REML = F)
 # anova table and model summary
 anova(mod_errors)
-summary(mod_errors)
-qqPlot(resid(mod_errors))
 
 # Compute resiudals and detect outliers
 e_rm <- stdResid(data = errors, model = mod_errors, 
                  plot = T, show.bound = T)
 
-# re-fit without outliers
-mod_errors_1 <- lmer(data = filter(e_rm, Outlier == 0), 
-                   e_rate ~ flankers + group + (1|id), 
-                   REML = F)
+# In order to test the effect of outliers, re-fit the model without outliers
+# (model does not change)
+mod_errors_1 <- lmer(data = filter(e_rm, Outlier == 0),
+                     error_rate_p_conditon ~ flankers + group + (1|id),
+                     REML = F)
 # anova table and model summary
 anova(mod_errors_1)
 summary(mod_errors_1)
-# residuals ok?
+# residuals ok? They look ok
 qqPlot(resid(mod_errors_1))
 
 # compute effect sizes (semi partial R2) from anova table
@@ -250,7 +257,7 @@ anova(mod_err_inter, mod_errors) # Interaction doesn't improve the model
 
 # build table
 # create summary table for the fitted models
-tab_model(file = './revision/rev_tables/mod_errors.html',
+tab_model(file = './results/tables/TABLE_S2_final_model_errors.html',
           mod_err_inter_1, mod_errors_1, digits = 2,
           show.aic = T, 
           collapse.ci = T,
@@ -268,9 +275,10 @@ tab_model(file = './revision/rev_tables/mod_errors.html',
                           'In x Competition'))
 
 
-# --- 7) Pairwise contrasts for error model ---------------------
+################################################################################
+# 5) Pairwise contrasts for error model ----------------------------------------
 # load Packages
-getPacks(c('emmeans'))
+getPacks('emmeans')
 
 # quick Plot
 err_eff <- emmip(mod_errors_1, ~ flankers, CIs = T, 
@@ -301,7 +309,8 @@ as.data.frame(est_group$contrasts)
 # CIs
 confint(est_group)
 
-# --- 8) Plot model estimates for trial type ------------------------------------
+# ------------------------------------------------------------------------------
+# Plot model estimates for trial type
 # plot estimates
 err_p <- ggplot(data = as.data.frame(emmeans(mod_errors, ~ flankers)), 
                 aes(y = emmean, x = flankers)) + 
@@ -315,7 +324,7 @@ err_p <- ggplot(data = as.data.frame(emmeans(mod_errors, ~ flankers)),
                  size = 3) + 
   geom_point(shape = 18, size = 3.5, color = 'black') +
   
-  labs(y = expression(bold('Estimated error rate')),
+  labs(y = expression('Estimated error rate'),
        x = 'Trial type') +
   
   theme_classic() + 
@@ -343,17 +352,17 @@ err_p <- ggplot(data = as.data.frame(emmeans(mod_errors, ~ flankers)),
 
 # save plot
 ggsave(err_p, 
-       filename = './paper_figs/Fig_2b.pdf', 
+       filename = './results/figures/Fig_2b.pdf',
        device = 'pdf',  width = 4, height = 5)
 
 
-# --- 9) FOLLOW-UP analyses - Incompatible trials ------------------------------
+################################################################################
+# 6) Follow-up analyses - Incompatible trials ----------------------------------
 # load Packages
 getPacks(c('lme4', 'lmerTest', 'sjPlot', 'car', 'MuMIn'))
 
 # -- Change default contrasts options ! --
-options(contrasts = c("contr.sum","contr.poly"))
-
+options(contrasts = c("contr.sum", "contr.poly"))
 
 # subset of data - only incompatible triasl
 errors_in <- filter(errors, flankers == 'Incompatible')
@@ -362,43 +371,45 @@ errors_in <- filter(errors, flankers == 'Incompatible')
 contrasts(errors_in$group) <- contr.sum(2); contrasts(errors_in$group)
 
 # # -- DON'T RUN --
-# #  ** use dummy coding to look at simple slopes **
+# #  ** only use to dummy coding group factor to look at simple slopes **
 # contrasts(errors_in$group) <- contr.treatment(2, base = 1); contrasts(errors_in$group)
 
-# fit a full model controlling for Motivation
-mod_full_err_in <- lm(data = errors_in, e_rate ~
-                          d_motivation + group*affiliation + group*agency)
+# fit a full model controlling for motivation
+mod_full_err_in <- lm(data = errors_in,
+                      error_rate_p_conditon ~ diff_in_motivivation_centred +
+                        group*SC_centred + group*MAE_centred)
 car::Anova(mod_full_err_in, type = 'III')
 
-# detect outlying observations
+# Compute resiudals and detect outliers
 Ini_rm <- stdResid(data = errors_in, mod_full_err_in, 
                    return.data = T, plot = T, show.bound = T)
 
-# re-fit without outliers
-mod_full_err_in_1 <- lm(data = filter(Ini_rm, Outlier == 0), e_rate ~
-                             d_motivation + group*affiliation + group*agency)
+# In order to test the effect of outliers, re-fit the model without outliers
+mod_full_err_in_1 <- lm(data = filter(Ini_rm, Outlier == 0),
+                        error_rate_p_conditon ~ diff_in_motivivation_centred +
+                          group*SC_centred + group*MAE_centred)
 car::Anova(mod_full_err_in_1, type = 'III')
 summary(mod_full_err_in_1)
 
 
-# fit the model with-out variable motivation
-mod_err_in <- lm(data = errors_in, e_rate ~
-                         group*affiliation + group*agency)
+# ------------------------------------------------------------------------------
+# Since motivation has no effect, drop that variable and re-fit the model
+mod_err_in <- lm(data = errors_in,
+                 error_rate_p_conditon ~ group*SC_centred + group*MAE_centred)
 car::Anova(mod_err_in, type = 'III')
 summary(mod_err_in)
-qqPlot(resid(mod_err_in))
 
-# detect outlying observations
+# Compute resiudals and detect outliers
 In_rm <- stdResid(data = errors_in, mod_err_in, 
                   return.data = T, plot = T, 
                   show.loess = T, show.bound = T)
 
-# re-fit without outliers
+# In order to test the effect of outliers, re-fit the model without outliers
 mod_err_in_1 <- lm(data = filter(In_rm, Outlier == 0), 
-                   e_rate ~ group*affiliation + group*agency)
+                   error_rate_p_conditon ~ group*SC_centred + group*MAE_centred)
 car::Anova(mod_err_in_1, type='III')
 summary(mod_err_in_1)
-# residulas ok?
+# residulas ok? The look ok
 qqPlot(resid(mod_err_in_1))
 tab_model(mod_err_in_1, show.std = T)
 
@@ -414,10 +425,11 @@ r.squaredGLMM(mod_err_in_1)
 anova(mod_full_err_in, mod_err_in) # Interactions doesn't improve the model
 
 # table for model summary
-tab_model(file = './revision/rev_tables/mod_incomp_errors.html',
-          mod_full_err_in_1, mod_err_in_1, digits = 2,
+tab_model(file = './results/tables/model_incomp_errors.html',
+          mod_full_err_in_1, mod_err_in_1, digits = 3,
           show.aic = T, 
-          collapse.ci = T, 
+          collapse.ci = T,
+          show.std = T,
           title = 'Table S3: Results of linear regression analysis of error rates on incompatible trials.',
           CSS = list(css.thead = 'padding:0.1cm;'),
           dv.labels = c('Error rate', 'Error rate'),
@@ -429,53 +441,31 @@ tab_model(file = './revision/rev_tables/mod_incomp_errors.html',
                           'Competition x affiliation',
                           'Competition x agency'))
 
-# --- 10) Interaction analysis -------------------------------------------------
-# quick interaction plot
-emmip(mod_err_in_1, affiliation ~ group, 
-      at = list(affiliation = c(-4, 4), 
-                agency = 0, d_motivation = 0), CIs = T)
 
-# save simple slopes of Affiliation
-emm_trend_SC <- emtrends(mod_err_in_1, 
-                         var = 'affiliation', 
-                         ~ 1)
-
-# effects of Affiliation
-summary(emm_trend_SC, infer = T)
-
-# save Simple slopes of Agency
-emm_trend_MAE <- emtrends(mod_err_in_1, 
-                          var = 'agency', ~ 1)
-
-# effect of Agency
-summary(emm_trend_MAE, infer = T)
-
-
-# --- 11) CREATE Follow-Up FIGURES --------------------------------
-# affiliation means
-affiliation_means <- emmeans::emmeans(mod_err_in_1, ~ affiliation | group,
-                                      CIs = T, 
+################################################################################
+# 7) Create interaction caontext by affiliation figure  ------------------------
+# affiliation high vs low means by group
+affiliation_means <- emmeans::emmeans(mod_err_in_1, ~ SC_centred | group,
+                                      CIs = T,
                                       lmer.df = 'satterthwaite',
-                                      at = list(end = 0, 
-                                                affiliation = c(-4, 4), 
+                                      at = list(SC_centred = c(-4, 4),
                                                 agency = 0))
 # pairwise comparissons
 pairs(affiliation_means, adjust = 'bonferroni')
 
-# affilaition means
-affiliation_means <- emmeans::emmeans(mod_err_in_1, ~ group | affiliation,
+# group means by affiliation high vs low
+affiliation_means <- emmeans::emmeans(mod_err_in_1, ~ group | SC_centred,
                                  CIs = T, 
                                  lmer.df = 'satterthwaite',
-                                 at = list(end = 0, 
-                                           affiliation = c(-4, 4), 
+                                 at = list(SC_centred = c(-4, 4),
                                            agency = 0))
 # pairwise comparissons
 pairs(affiliation_means, adjust = 'bonferroni')
 
 # plot interaction affiliation x context
-pd = position_dodge(.2)
+pd <- position_dodge(.2)
 plt_aff <- ggplot(data = data.frame(affiliation_means), 
-                    aes(x = as.factor(affiliation), 
+                    aes(x = as.factor(SC_centred),
                         y = emmean, 
                         color = as.factor(group),
                         group = group)) +
@@ -515,30 +505,5 @@ plt_aff <- ggplot(data = data.frame(affiliation_means),
 
 # save plot
 ggsave(plt_aff, 
-       filename = './paper_figs/Fig_2c.pdf', 
+       filename = './results/figures/Fig_2c.pdf',
        device = 'pdf',  width = 4, height = 5)
-
-
-# --- 12) ANALYSE RT - Incompatible trials -------------------------------------
-Errors_In <- as.data.frame(Errors_In, row.names = 1:76)
-
-# check distribution
-hist(Errors_In$M_RT, breaks = 10)
-rug(Errors_In$M_RT)
-
-# fit Model 
-mod_err_RT <- lm(data = Errors_In, 
-                 M_RT ~ Interest + Group + Agency + Affiliation)
-anova(mod_err_RT)
-summary(mod_err_RT)
-plot(mod_err_RT)
-
-# remove Outliers? --> No effects
-mod_err_RT <- lm(data = Errors_In[-c(18, 37), ],
-                 M_RT ~ Interest + Group + Agency + Affiliation)
-anova(mod_err_RT)
-summary(mod_err_RT)
-plot(mod_err_RT)
-
-# compute CIs
-confint(mod_err_RT)

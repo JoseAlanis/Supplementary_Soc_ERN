@@ -1,3 +1,5 @@
 
 .DS_Store
 .Rhistory
+/results/
+/r_scripts/00_snippeds.R
