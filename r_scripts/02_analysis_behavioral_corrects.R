@@ -4,63 +4,28 @@
 # --- script version: Dez 2018
 # --- content: analysis of behavioural correct reactions
 
-# --- 1) Set paths and get workflow functions ----------------------------------
-# path to project
-setwd('/Volumes/TOSHIBA/manuscripts_and_data/soc_ern/')
-
+# --- 1) load workflow functions and necessary packages ------------------------
 # workflow functions
 source('./r_functions/getPacks.R')
 source('./r_functions/stdResid.R')
-source('./r_functions/overDisp.R')
 source('./r_functions/spR2.R')
 source('./r_functions/dataSummary.R')
 
-# Install and load multiple R packages necessary for analysis.
-getPacks(c('tidyr', 'dplyr',
-           'lme4', 'lmerTest', 'car', 'MuMIn', 'emmeans', 
-           'sjPlot', 'ggplot2', 'viridis'))
-
+# load packages
+getPacks(c('tidyr', 'dplyr', 'ggplot2', 'viridis'))
 
 # --- 2) Import data -----------------------------------------------------------
-# personality data
-perso <- read.table('./data_for_r/all_perso.txt', 
-                    header = T)
-unique(perso$id)
-# summarise (for later)
-perso %>% summarise_if(is.numeric, sd)
-
-# data frame containing behavioural errors
-load('./data_for_r/errors_data.RData')
-unique(errors_data$id)
-# merge data frames
-errors <- merge(errors_data, perso, 'id'); rm(errors_data, perso)
-errors <-  dplyr::filter(errors, flankers == 'Incompatible')
-errors$flankers <-  NULL
-
-# corrects data
-data_corrects <- read.table('./data_for_r/corrects.txt', header = T)
-names(data_corrects)[1] <-  'id'
-names(data_corrects)[2] <- 'flankers'
-
-# capitalize first letter in flankers variable
-firstup <- function(x) {
-  substr(x, 1, 1) <- toupper(substr(x, 1, 1))
-  x
-}
-data_corrects$flankers <- firstup(as.character(data_corrects$flankers))
-# to factor
-data_corrects$flankers <- as.factor(data_corrects$flankers)
-
+corrects <- read.table('../data/behavioral/behavioral_data.txt',
+                       header = T)
 # summarise for later
-as.data.frame(data_corrects %>% group_by(flankers) %>% 
-  summarise(RT = mean(M_RT), sd = sd(M_RT)))
+as.data.frame(corrects %>% group_by(flankers) %>%
+  summarise(RT = mean(mean_correct_rt), sd = sd(mean_correct_rt)))
 
-# merge wich errors
-corrects <-  merge(data_corrects, errors, c('id'))
-
-# --- 3) Plot deistribution  ---------------------------------------------------
-corr_box <- ggplot(corrects, 
-                   aes(x = flankers, y = M_RT, color = flankers)) +
+################################################################################
+# 3) Descriptives --------------------------------------------------------------
+# Plot dirtribution of correct reaction time
+corr_box <- ggplot(corrects,
+                   aes(x = flankers, y = mean_correct_rt, color = flankers)) +
   
   geom_violin(fill = NA, 
               color='black', trim = T) + 
@@ -73,7 +38,7 @@ corr_box <- ggplot(corrects,
                fill='black', size = .3) +
   
   labs(x = 'Trial type', 
-       y = expression(bold('Mean RT (ms)'))) + 
+       y = 'Mean RT (ms)') +
   
   theme_classic() +
   
@@ -102,84 +67,96 @@ corr_box <- ggplot(corrects,
 
 # save plot
 ggsave(corr_box, 
-       filename = './paper_figs//Fig_3a.pdf', 
+       filename = './results/figures/Fig_3a.pdf',
        device = 'pdf',  width = 4, height = 5)
 
-
-
-# --- 4) effect code predictors ------------------------------------------------
+################################################################################
+# 4) Statistical analysis ------------------------------------------------------
 # load Packages
 getPacks(c('lme4', 'lmerTest', 'sjPlot', 'car', 'MuMIn'))
 
 # -- change default contrasts options ! --
-options(contrasts = c("contr.sum","contr.poly"))
+options(contrasts = c("contr.sum", "contr.poly"))
 
 # effect code
+corrects$group <- as.factor(corrects$group)
 contrasts(corrects$group) <- contr.sum(2); contrasts(corrects$group)
+corrects$flankers <- as.factor(corrects$flankers)
 contrasts(corrects$flankers) <- contr.sum(4); contrasts(corrects$flankers)
 
+# *** Set up and fit the "full model" ***
+# For completness. However, interpreting the estimates of the
+# full model might be complicated. The more parsimonious models described
+# in the sections below show the same results and their interpretation
+# is straight foward.
 
-# --- 5) full model  -----------------------------------------------------------
-# fit full model
-mod_full <- lmer(data = corrects, 
-                 M_RT ~ d_motivation + total_error_rate + 
-                  group*flankers*affiliation + 
-                  group*flankers*agency + (1|id), 
+mod_full <- lmer(data = corrects,
+                 mean_correct_rt ~
+                   diff_in_motivation_centred + error_rate_overall +
+                   group*flankers*SC_centred +
+                   group*flankers*MAE_centred + (1|id),
                  REML = F)
 # anova table
 anova(mod_full)
 
-# identify outlying observations
+# Compute resiudals and detect outliers
 c_rm <- stdResid(data = corrects, model = mod_full, plot = T, 
                  main = expression('Residuals ' ['LMER model for RT data']), 
                  xlab = expression('Fitted Values ' ['Mean RT']),
                  ylab = 'Std. Pearson Residuals', show.bound = T)
 
-# re-fit without outliers
+# In order to test the effect of outliers, re-fit the model without outliers
+# (model does not change much)
 mod_full_1 <- lmer(data = filter(c_rm, Outlier == 0), 
-                   M_RT ~ d_motivation + total_error_rate + 
-                     group*flankers*affiliation + 
-                     group*flankers*agency + (1|id), 
+                 mean_correct_rt ~
+                   diff_in_motivation_centred + error_rate_overall +
+                   group*flankers*SC_centred +
+                   group*flankers*MAE_centred + (1|id),
                    REML = F)
 # anova table
 anova(mod_full_1)
 # model summary
-tab_model(mod_full_1)
+tab_model(mod_full_1,
+          title = 'Full model of correct RT.')
 
 
-# --- 6) set up and fit the reported models ------------------------------------
+# ------------------------------------------------------------------------------
+# *** Set up and fit reported models ***
 # load Packages
 getPacks(c('lme4', 'lmerTest', 'sjPlot', 'car', 'MuMIn'))
 
 # -- change default contrasts options ! --
-options(contrasts = c("contr.sum","contr.poly"))
+options(contrasts = c("contr.sum", "contr.poly"))
 
 # effect code
+corrects$group <- as.factor(corrects$group)
 contrasts(corrects$group) <- contr.sum(2); contrasts(corrects$group)
+corrects$flankers <- as.factor(corrects$flankers)
 contrasts(corrects$flankers) <- contr.sum(4); contrasts(corrects$flankers)
 
 # more parsimonious model including personality variables
 mod_corrects <- lmer(data = corrects, 
-                     M_RT ~ total_error_rate + d_motivation + 
-                       group + flankers + affiliation + agency + 
-                       (1|id), 
+                     mean_correct_rt ~
+                       diff_in_motivation_centred + error_rate_overall +
+                       group + flankers + SC_centred + MAE_centred + (1|id),
                      REML = F)
 # anova table
 anova(mod_corrects)
 # residuals ok?
 qqPlot(resid(mod_corrects, 'pearson'))
 
-# identify outliers
+# Compute resiudals and detect outliers
 c_rm <- stdResid(data = corrects, model = mod_corrects, plot = T, 
                  main = expression('Residuals ' ['LMER model for RT data']), 
                  xlab = expression('Fitted Values ' ['Mean RT']),
                  ylab = 'Std. Pearson Residuals', show.bound = T)
 
-# re-fit without outliers
-mod_corrects_1 <- lmer(data = filter(c_rm, Outlier == 0), 
-                       M_RT ~ total_error_rate + d_motivation + 
-                         group + flankers + affiliation + agency + 
-                         (1|id), 
+# In order to test the effect of outliers, re-fit the model without outliers
+# (model does not change)
+mod_corrects_1 <- lmer(data = filter(c_rm, Outlier == 0),
+                       mean_correct_rt ~
+                         diff_in_motivation_centred + error_rate_overall +
+                         group + flankers + SC_centred + MAE_centred + (1|id),
                        REML = F)
 # anova table and model summary
 anova(mod_corrects_1)
