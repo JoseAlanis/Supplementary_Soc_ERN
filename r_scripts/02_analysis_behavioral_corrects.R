@@ -17,9 +17,6 @@ getPacks(c('tidyr', 'dplyr', 'ggplot2', 'viridis'))
 # --- 2) Import data -----------------------------------------------------------
 corrects <- read.table('../data/behavioral/behavioral_data.txt',
                        header = T)
-# summarise for later
-as.data.frame(corrects %>% group_by(flankers) %>%
-  summarise(RT = mean(mean_correct_rt), sd = sd(mean_correct_rt)))
 
 ################################################################################
 # 3) Descriptives --------------------------------------------------------------
@@ -89,10 +86,9 @@ contrasts(corrects$flankers) <- contr.sum(4); contrasts(corrects$flankers)
 # full model might be complicated. The more parsimonious models described
 # in the sections below show the same results and their interpretation
 # is straight foward.
-
 mod_full <- lmer(data = corrects,
                  mean_correct_rt ~
-                   diff_in_motivation_centred + error_rate_overall +
+                   diff_in_motivation_centred + error_rate_overall_centred +
                    group*flankers*SC_centred +
                    group*flankers*MAE_centred + (1|id),
                  REML = F)
@@ -109,7 +105,7 @@ c_rm <- stdResid(data = corrects, model = mod_full, plot = T,
 # (model does not change much)
 mod_full_1 <- lmer(data = filter(c_rm, Outlier == 0), 
                  mean_correct_rt ~
-                   diff_in_motivation_centred + error_rate_overall +
+                   diff_in_motivation_centred + error_rate_overall_centred +
                    group*flankers*SC_centred +
                    group*flankers*MAE_centred + (1|id),
                    REML = F)
@@ -123,7 +119,7 @@ tab_model(mod_full_1,
 # ------------------------------------------------------------------------------
 # *** Set up and fit reported models ***
 # load Packages
-getPacks(c('lme4', 'lmerTest', 'sjPlot', 'car', 'MuMIn'))
+getPacks(c('lme4', 'lmerTest', 'sjPlot', 'car', 'MuMIn', 'emmeans'))
 
 # -- change default contrasts options ! --
 options(contrasts = c("contr.sum", "contr.poly"))
@@ -137,13 +133,11 @@ contrasts(corrects$flankers) <- contr.sum(4); contrasts(corrects$flankers)
 # more parsimonious model including personality variables
 mod_corrects <- lmer(data = corrects, 
                      mean_correct_rt ~
-                       diff_in_motivation_centred + error_rate_overall +
+                       diff_in_motivation_centred + error_rate_overall_centred +
                        group + flankers + SC_centred + MAE_centred + (1|id),
                      REML = F)
 # anova table
 anova(mod_corrects)
-# residuals ok?
-qqPlot(resid(mod_corrects, 'pearson'))
 
 # Compute resiudals and detect outliers
 c_rm <- stdResid(data = corrects, model = mod_corrects, plot = T, 
@@ -155,16 +149,14 @@ c_rm <- stdResid(data = corrects, model = mod_corrects, plot = T,
 # (model does not change)
 mod_corrects_1 <- lmer(data = filter(c_rm, Outlier == 0),
                        mean_correct_rt ~
-                         diff_in_motivation_centred + error_rate_overall +
+                         diff_in_motivation_centred + error_rate_overall_centred +
                          group + flankers + SC_centred + MAE_centred + (1|id),
                        REML = F)
 # anova table and model summary
 anova(mod_corrects_1)
 summary(mod_corrects_1)
-# residuals ok?
+# residuals ok? They look ok
 qqPlot(resid(mod_corrects_1))
-# model table
-tab_model(mod_corrects_1, show.std = T)
 
 # compute effect sizes (semi partial R2) from anova table
 amod <- anova(mod_corrects_1); amod
@@ -172,16 +164,17 @@ amod <-  as.data.frame(amod); amod
 amod$sp.R2 <- spR2(amod); amod
 
 # table for model summary
-tab_model(file = './revision/rev_tables/mod_corrects.html',
+tab_model(file = './results/tables/TABLE_S4_final_model_corrects.html',
           mod_corrects_1, digits = 2,
+          show.std = T,
           show.aic = T, 
           collapse.ci = T,
           title = 'Table S4: Results of linear mixed-effects regression analysis of correct reactions RT.',
           CSS = list(css.thead = 'padding:0.1cm;'),
-          dv.labels = c('Correct reactions RT'),
+          dv.labels = 'Correct reactions RT',
           pred.labels = c('(Intercept)',
-                          'Overall error rate',
                           'delta-Engagement',
+                          'Overall error rate',
                           'Competition',
                           'Compatible',
                           'Indetical',
@@ -191,31 +184,20 @@ tab_model(file = './revision/rev_tables/mod_corrects.html',
 
 # descriptives
 as.data.frame(corrects %>% dplyr::group_by(flankers) %>% 
-                dplyr::summarise(M = mean(M_RT), 
-                                 SD = sd(M_RT), 
-                                 SE = sd(M_RT) / sqrt(sum(!is.na(M_RT))), 
-                                 Min = min(M_RT), Max = max(M_RT)))
+                dplyr::summarise(M = mean(mean_correct_rt),
+                                 SD = sd(mean_correct_rt),
+                                 SE = sd(mean_correct_rt) / sqrt(sum(!is.na(mean_correct_rt))),
+                                 Min = min(mean_correct_rt), Max = max(mean_correct_rt)))
 
-# --- 6) Follow-up analyises ---------------------------------------------------
+
+# ------------------------------------------------------------------------------
+# follow analyses and pairwise contrasts for correct RT model
 group_corr <- emmeans(mod_corrects_1, pairwise ~ flankers,
                      adjust = 'bonferroni', lmer.df = 'satterthwaite')
 as.data.frame(group_corr$contrasts)
 confint(group_corr)
 
-# effects of overall error-rates
-emtrends(mod_corrects_1, var = 'total_error_rate', 
-         lmer.df = 'satterthwaite', ~ 1,
-         at = list(affiliation = 0, 
-                   agency = 0, d_motivation = 0))
-# effects of overall delta-motivation
-emtrends(mod_corrects_1, var = 'd_motivation', 
-         lmer.df = 'satterthwaite', ~ 1,
-         at = list(affiliation = 0, 
-                   agency = 0, total_error_rate = 0))
-
-
-# --- 7) Plot model estimates for trial type ------------------------------------
-# plot estimates
+# plot model estimates for trial type
 corr_p <- ggplot(data = data.frame(group_corr$emmeans), 
                 aes(y = emmean, x = flankers)) + 
   
@@ -256,27 +238,28 @@ corr_p <- ggplot(data = data.frame(group_corr$emmeans),
 
 # save plot
 ggsave(corr_p, 
-       filename = './paper_figs/Fig_3b.pdf', 
+       filename = './results/figures/Fig_3b.pdf',
        device = 'pdf',  width = 4, height = 5)
 
 
-# --- 7) create simple slope plots ---------------------------------------------
+# create simple slope plots
 # desciptives
-errors %>% summarise(sd_err = sd(overall_e_rate), sd_motiv = sd(d_motivation))
+corrects %>% summarise(sd_err = sd(error_rate_overall_centred),
+                     sd_motiv = sd(diff_in_motivation_centred))
 
 # slope of error rate
-err_slope <- emmeans(mod_corrects_1, pairwise ~ total_error_rate,
-                       at = list(total_error_rate = c(-0.05, 0.05), 
-                                 d_motivation = 0,
-                                 agency = 0,
-                                 affiliation = 0),
+err_slope <- emmeans(mod_corrects_1, pairwise ~ error_rate_overall_centred,
+                       at = list(error_rate_overall_centred = c(-0.05, 0.05),
+                                 diff_in_motivation_centred = 0,
+                                 MAE_centred = 0,
+                                 SC_centred = 0),
                        adjust = 'bonferroni', lmer.df = 'satterthwaite'); err_slope
 
 
 # plot slope of error rate
-pd = position_dodge(.2)
+pd <- position_dodge(.2)
 plt_err <- ggplot(data = data.frame(err_slope$emmeans), 
-                  aes(x = as.factor(total_error_rate), 
+                  aes(x = as.factor(error_rate_overall_centred),
                       y = emmean, group = 1)) +
 
   geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
@@ -314,21 +297,21 @@ plt_err <- ggplot(data = data.frame(err_slope$emmeans),
 
 # save plot
 ggsave(plt_err, 
-       filename = './paper_figs/Fig_3c.pdf', 
+       filename = './results/figures/Fig_3c.pdf',
        device = 'pdf',  width = 4, height = 5)
 
 # slope of motivation
-motiv_slope <- emmeans(mod_corrects_1, pairwise ~ d_motivation,
-                       at = list(total_error_rate = 0, 
-                                 d_motivation = c(-2, 2),
-                                 agency = 0,
-                                 affiliation = 0),
+motiv_slope <- emmeans(mod_corrects_1, pairwise ~ diff_in_motivation_centred,
+                       at = list(error_rate_overall_centred = 0,
+                                 diff_in_motivation_centred = c(-2, 2),
+                                 MAE_centred = 0,
+                                 SC_centred = 0),
                        adjust = 'bonferroni', lmer.df = 'satterthwaite'); motiv_slope
 
 # plot slope of motivation
-pd = position_dodge(.2)
+pd <- position_dodge(.2)
 plt_motiv <- ggplot(data = data.frame(motiv_slope$emmeans), 
-                  aes(x = as.factor(d_motivation), 
+                  aes(x = as.factor(diff_in_motivation_centred),
                       y = emmean, group = 1)) +
   
   geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), 
@@ -368,5 +351,5 @@ plt_motiv <- ggplot(data = data.frame(motiv_slope$emmeans),
 
 # save plot
 ggsave(plt_motiv, 
-       filename = './paper_figs/Fig_3d.pdf', 
+       filename = './results/figures/Fig_3d.pdf',
        device = 'pdf',  width = 4, height = 5)

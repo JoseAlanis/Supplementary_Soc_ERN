@@ -18,6 +18,8 @@ getPacks(c('dplyr', 'ggplot2', 'viridis', 'sjPlot'))
 errors <- read.table('../data/behavioral/behavioral_data.txt',
                     header = T)
 
+errors <- na.omit(errors)
+
 ################################################################################
 # 3) Descriptives --------------------------------------------------------------
 # Plot distribution of number of errors
@@ -56,7 +58,7 @@ ggsave(error_dist_plot,
        device = 'pdf',  width = 10, height = 8)
 
 # violin plot for manuscript
-err_box <-  ggplot(errors, 
+err_box <-  ggplot(errors,
                    aes(x = flankers,
                        y = error_rate_p_conditon,
                        color = flankers)) +
@@ -424,7 +426,7 @@ r.squaredGLMM(mod_err_in_1)
 anova(mod_full_err_in, mod_err_in) # Interactions doesn't improve the model
 
 # table for model summary
-tab_model(file = './results/tables/model_incomp_errors.html',
+tab_model(file = './results/tables/TABLE_S2_final_model_incomp_errors.html',
           mod_full_err_in_1, mod_err_in_1, digits = 3,
           show.aic = T, 
           collapse.ci = T,
