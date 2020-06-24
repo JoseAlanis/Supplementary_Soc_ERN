@@ -1,78 +1,48 @@
 # --- author: jose c. garcia alanis
 # --- encoding: utf-8
-# --- r version: 3.5.1 (2018-07-02) -- "Feather Spray"
-# --- script version: Dez 2018
-# --- content: analysis of behavioural correct reactions
+# --- r version: 4.0.1 (2020-06-06) -- "See Things Now"
+# --- script version: Jun 2020
+# --- content: analysis of physiological data
 
-# --- 1) Set paths and get workflow functions ----------------------------------
-# path to project
-setwd('/Volumes/TOSHIBA/manuscripts_and_data/soc_ern/')
 
+# --- 1) load workflow functions and necessary packages ------------------------
 # workflow functions
 source('./r_functions/getPacks.R')
 source('./r_functions/stdResid.R')
-source('./r_functions/overDisp.R')
 source('./r_functions/spR2.R')
 source('./r_functions/dataSummary.R')
-source('./r_functions/topoplot.R')
 
-# install and load multiple R packages necessary for analysis.
+# load packages
 getPacks(c('tidyr', 'dplyr', 'ggplot2', 'viridis'))
 
-
-# get electrode locations
-chanlocs <- read.table('./meta_dat/chanlocs_ftask.txt',
-                       header = T, 
+# load eeg channel locations
+chanlocs <- read.table('../data/eeg/chanlocs_ftask.txt',
+                       header = T,
                        sep = ',')
-# Rename column
+# rename column
 names(chanlocs)[1] <- 'electrode'
 
-# Calculate charthesian coordiantes topoplot
+# calculate charthesian coordiantes for topoplot
 chanlocs$radianTheta <- pi/180*chanlocs$theta
 chanlocs <- chanlocs %>%
   mutate(x = .$radius*sin(.$radianTheta),
          y = .$radius*cos(.$radianTheta))
 
 
-# --- 3) Import data ----------------------------------------------------------
-# personality data
-perso <- read.table('./data_for_r/all_perso.txt', 
-                    header = T)
-unique(perso$id)
-# Behavioural data
-errors <- read.table('./data_for_r/errors_data.txt')
+# --- 2) Import data -----------------------------------------------------------
+dat_ave <- read.table('../data/eeg/all_electrodes_incompatible_average.txt')
 
-# physiological data
-# dat_ave <- read.table('./revision/rev_data/phys_midline_incomp_ave.txt')
-dat_ave <- read.table('./data_for_r/phys_all_incomp_ave.txt')
-
-# -- bring physiological data in format for analysis ---
-names(dat_ave) <- tolower(names(dat_ave))
-dat_ave$flankers <- factor(dat_ave$flankers)
-dat_ave$electrode <- factor(dat_ave$electrode)
-
-# capitalize first letter in flankers variable
-firstup <- function(x) {
-  substr(x, 1, 1) <- toupper(substr(x, 1, 1))
-  x
-}
-dat_ave$flankers <- firstup(as.character(dat_ave$flankers))
-dat_ave$group <- firstup(as.character(dat_ave$group))
-# to factor
-dat_ave$flankers <- as.factor(dat_ave$flankers)
-dat_ave$group <- as.factor(dat_ave$group)
-# -- done --
-
-
-# --- 3) compute delta-ERN (dERN) ----------------------------------------------
-# (i.e., difference wave comparing correct and incorrect reponses)
-response_ave <-  dat_ave %>% 
+# keep this for later
+response_ave <-  dat_ave %>%
   filter(time >= 0 & time <= 100 & electrode %in% c('FCz', 'Cz'))
 
-# spread reaction variable (to wide format)
-dat_ave <- tidyr::spread(dat_ave, reaction, m_amp)
-# compute difference wave
-dat_ave$diff <- dat_ave$Incorrect - dat_ave$Correct
+# --- 3) Compute delta-ERN (dERN) ----------------------------------------------
+# to wide format
+dat_ave <- dat_ave %>%
+  pivot_wider(names_from = reaction, values_from = mean_amp)
+
+# compute difference wave (i.e., comparing correct and incorrect reponses)
+dat_ave <- dat_ave %>% mutate(diff = Incorrect - Correct)
 
 
 # --- 4) analyse dERN cross midline electrodes ---------------------------------

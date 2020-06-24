@@ -14,14 +14,15 @@ source('./r_functions/dataSummary.R')
 # load packages
 getPacks(c('dplyr', 'ggplot2', 'viridis', 'sjPlot'))
 
-# --- 2) Import data -----------------------------------------------------------
+
+# 2) --- Import data -----------------------------------------------------------
 errors <- read.table('../data/behavioral/behavioral_data.txt',
                     header = T)
 
 errors <- na.omit(errors)
 
-################################################################################
-# 3) Descriptives --------------------------------------------------------------
+
+# --- 3) Descriptives ----------------------------------------------------------
 # Plot distribution of number of errors
 error_dist_plot <- ggplot(errors,
                           aes(x = error_rate_p_conditon,
@@ -131,8 +132,7 @@ errors %>% dplyr::group_by(flankers) %>%
          file = './results/tables/errors_by_flankers.html')
 
 
-################################################################################
-# 4) Statistical analysis ------------------------------------------------------
+# --- 4) Statistical analysis --------------------------------------------------
 # *** Set up and fit the "full model" ***
 
 # # For completness, we document the results of a "full model", which 
@@ -276,8 +276,7 @@ tab_model(file = './results/tables/TABLE_S2_final_model_errors.html',
                           'In x Competition'))
 
 
-################################################################################
-# 5) Pairwise contrasts for error model ----------------------------------------
+# --- 5) Pairwise contrasts for error model ------------------------------------
 # load Packages
 getPacks('emmeans')
 
@@ -357,8 +356,7 @@ ggsave(err_p,
        device = 'pdf',  width = 4, height = 5)
 
 
-################################################################################
-# 6) Follow-up analyses - Incompatible trials ----------------------------------
+# --- 6) Follow-up analyses - Incompatible trials ------------------------------
 # load Packages
 getPacks(c('lme4', 'lmerTest', 'sjPlot', 'car', 'MuMIn'))
 
@@ -443,8 +441,7 @@ tab_model(file = './results/tables/TABLE_S2_final_model_incomp_errors.html',
                           'Competition x agency'))
 
 
-################################################################################
-# 7) Create interaction caontext by affiliation figure  ------------------------
+# --- 7) Create interaction caontext by affiliation figure  --------------------
 # affiliation high vs low means by group
 affiliation_means <- emmeans::emmeans(mod_err_in_1, ~ SC_centred | group,
                                       CIs = T,

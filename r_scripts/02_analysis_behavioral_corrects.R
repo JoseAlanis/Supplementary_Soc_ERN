@@ -1,7 +1,7 @@
 # --- author: jose c. garcia alanis
 # --- encoding: utf-8
-# --- r version: 3.5.1 (2018-07-02) -- "Feather Spray"
-# --- script version: Dez 2018
+# --- r version: 4.0.1 (2020-06-06) -- "See Things Now"
+# --- script version: Jun 2020
 # --- content: analysis of behavioural correct reactions
 
 # --- 1) load workflow functions and necessary packages ------------------------
