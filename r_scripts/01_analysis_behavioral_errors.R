@@ -15,8 +15,10 @@ source('./r_functions/dataSummary.R')
 getPacks(c('dplyr', 'ggplot2', 'viridis', 'sjPlot'))
 
 # --- 2) Import data -----------------------------------------------------------
-errors <- read.table('../data/behavioral/behavioral_errors.txt',
+errors <- read.table('../data/behavioral/behavioral_data.txt',
                     header = T)
+
+errors <- na.omit(errors)
 
 ################################################################################
 # 3) Descriptives --------------------------------------------------------------
@@ -56,7 +58,7 @@ ggsave(error_dist_plot,
        device = 'pdf',  width = 10, height = 8)
 
 # violin plot for manuscript
-err_box <-  ggplot(errors, 
+err_box <-  ggplot(errors,
                    aes(x = flankers,
                        y = error_rate_p_conditon,
                        color = flankers)) +
@@ -155,7 +157,7 @@ contrasts(errors$flankers) <- contr.sum(4); contrasts(errors$flankers)
 # ** fit full model including all variables and interactions **
 mod_err_full <-  lmer(data = errors,
                       error_rate_p_conditon ~
-                        diff_in_motivivation_centred + group*flankers*MAE_centred +
+                        diff_in_motivation_centred + group*flankers*MAE_centred +
                         group*flankers*SC_centred + (1|id),
                       REML = F)
 # Anova table
@@ -188,7 +190,7 @@ contrasts(errors$flankers) <- contr.sum(4); contrasts(errors$flankers)
 # fit model controllig for motivation
 mod_err_inter <- lmer(data = errors,
                       error_rate_p_conditon ~
-                        diff_in_motivivation_centred + flankers*group + (1|id),
+                        diff_in_motivation_centred + flankers*group + (1|id),
                       REML = F)
 # Anova table
 anova_inter <- anova(mod_err_inter)
@@ -205,7 +207,7 @@ er_rm <- stdResid(data = errors,
 # (model does not change)
 mod_err_inter_1 <- lmer(data = filter(er_rm, Outlier == 0),
                         error_rate_p_conditon ~
-                        diff_in_motivivation_centred + flankers*group + (1|id),
+                        diff_in_motivation_centred + flankers*group + (1|id),
                         REML = F)
 
 # Anova table and model summary
@@ -375,7 +377,7 @@ contrasts(errors_in$group) <- contr.sum(2); contrasts(errors_in$group)
 
 # fit a full model controlling for motivation
 mod_full_err_in <- lm(data = errors_in,
-                      error_rate_p_conditon ~ diff_in_motivivation_centred +
+                      error_rate_p_conditon ~ diff_in_motivation_centred +
                         group*SC_centred + group*MAE_centred)
 car::Anova(mod_full_err_in, type = 'III')
 
@@ -385,7 +387,7 @@ Ini_rm <- stdResid(data = errors_in, mod_full_err_in,
 
 # In order to test the effect of outliers, re-fit the model without outliers
 mod_full_err_in_1 <- lm(data = filter(Ini_rm, Outlier == 0),
-                        error_rate_p_conditon ~ diff_in_motivivation_centred +
+                        error_rate_p_conditon ~ diff_in_motivation_centred +
                           group*SC_centred + group*MAE_centred)
 car::Anova(mod_full_err_in_1, type = 'III')
 summary(mod_full_err_in_1)
@@ -424,7 +426,7 @@ r.squaredGLMM(mod_err_in_1)
 anova(mod_full_err_in, mod_err_in) # Interactions doesn't improve the model
 
 # table for model summary
-tab_model(file = './results/tables/model_incomp_errors.html',
+tab_model(file = './results/tables/TABLE_S2_final_model_incomp_errors.html',
           mod_full_err_in_1, mod_err_in_1, digits = 3,
           show.aic = T, 
           collapse.ci = T,
