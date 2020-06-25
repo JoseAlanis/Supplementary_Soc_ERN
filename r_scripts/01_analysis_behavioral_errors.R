@@ -14,14 +14,15 @@ source('./r_functions/dataSummary.R')
 # load packages
 getPacks(c('dplyr', 'ggplot2', 'viridis', 'sjPlot'))
 
+
 # --- 2) Import data -----------------------------------------------------------
 errors <- read.table('../data/behavioral/behavioral_data.txt',
                     header = T)
 
 errors <- na.omit(errors)
 
-################################################################################
-# 3) Descriptives --------------------------------------------------------------
+
+# --- 3) Descriptives ----------------------------------------------------------
 # Plot distribution of number of errors
 error_dist_plot <- ggplot(errors,
                           aes(x = error_rate_p_conditon,
@@ -131,8 +132,7 @@ errors %>% dplyr::group_by(flankers) %>%
          file = './results/tables/errors_by_flankers.html')
 
 
-################################################################################
-# 4) Statistical analysis ------------------------------------------------------
+# --- 4) Statistical analysis --------------------------------------------------
 # *** Set up and fit the "full model" ***
 
 # # For completness, we document the results of a "full model", which 
@@ -174,7 +174,7 @@ qqPlot(resid(mod_err_full))
 r.squaredGLMM(update(mod_err_full))
 
 
-# ------------------------------------------------------------------------------
+# *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 # *** Set up and fit reported models ***
 # load Packages
 getPacks(c('lme4', 'lmerTest', 'sjPlot', 'car', 'MuMIn'))
@@ -218,7 +218,7 @@ qqPlot(resid(mod_err_inter_1))
 plot_model(mod_err_inter_1, 'diag')
 
 
-# ------------------------------------------------------------------------------
+# *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 # Since interaction and motivation were not significant:
 # dro those terms, re-fit the model and see
 # if effects change.
@@ -276,8 +276,7 @@ tab_model(file = './results/tables/TABLE_S2_final_model_errors.html',
                           'In x Competition'))
 
 
-################################################################################
-# 5) Pairwise contrasts for error model ----------------------------------------
+# --- 5) Pairwise contrasts for error model ------------------------------------
 # load Packages
 getPacks('emmeans')
 
@@ -310,7 +309,7 @@ as.data.frame(est_group$contrasts)
 # CIs
 confint(est_group)
 
-# ------------------------------------------------------------------------------
+# *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 # Plot model estimates for trial type
 # plot estimates
 err_p <- ggplot(data = as.data.frame(emmeans(mod_errors, ~ flankers)), 
@@ -357,8 +356,7 @@ ggsave(err_p,
        device = 'pdf',  width = 4, height = 5)
 
 
-################################################################################
-# 6) Follow-up analyses - Incompatible trials ----------------------------------
+# --- 6) Follow-up analyses - Incompatible trials ------------------------------
 # load Packages
 getPacks(c('lme4', 'lmerTest', 'sjPlot', 'car', 'MuMIn'))
 
@@ -393,7 +391,7 @@ car::Anova(mod_full_err_in_1, type = 'III')
 summary(mod_full_err_in_1)
 
 
-# ------------------------------------------------------------------------------
+# *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 # Since motivation has no effect, drop that variable and re-fit the model
 mod_err_in <- lm(data = errors_in,
                  error_rate_p_conditon ~ group*SC_centred + group*MAE_centred)
@@ -443,8 +441,7 @@ tab_model(file = './results/tables/TABLE_S2_final_model_incomp_errors.html',
                           'Competition x agency'))
 
 
-################################################################################
-# 7) Create interaction caontext by affiliation figure  ------------------------
+# --- 7) Create interaction caontext by affiliation figure  --------------------
 # affiliation high vs low means by group
 affiliation_means <- emmeans::emmeans(mod_err_in_1, ~ SC_centred | group,
                                       CIs = T,
