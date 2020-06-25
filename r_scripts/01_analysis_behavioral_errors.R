@@ -15,7 +15,7 @@ source('./r_functions/dataSummary.R')
 getPacks(c('dplyr', 'ggplot2', 'viridis', 'sjPlot'))
 
 
-# 2) --- Import data -----------------------------------------------------------
+# --- 2) Import data -----------------------------------------------------------
 errors <- read.table('../data/behavioral/behavioral_data.txt',
                     header = T)
 
@@ -174,7 +174,7 @@ qqPlot(resid(mod_err_full))
 r.squaredGLMM(update(mod_err_full))
 
 
-# ------------------------------------------------------------------------------
+# *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 # *** Set up and fit reported models ***
 # load Packages
 getPacks(c('lme4', 'lmerTest', 'sjPlot', 'car', 'MuMIn'))
@@ -218,7 +218,7 @@ qqPlot(resid(mod_err_inter_1))
 plot_model(mod_err_inter_1, 'diag')
 
 
-# ------------------------------------------------------------------------------
+# *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 # Since interaction and motivation were not significant:
 # dro those terms, re-fit the model and see
 # if effects change.
@@ -309,7 +309,7 @@ as.data.frame(est_group$contrasts)
 # CIs
 confint(est_group)
 
-# ------------------------------------------------------------------------------
+# *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 # Plot model estimates for trial type
 # plot estimates
 err_p <- ggplot(data = as.data.frame(emmeans(mod_errors, ~ flankers)), 
@@ -391,7 +391,7 @@ car::Anova(mod_full_err_in_1, type = 'III')
 summary(mod_full_err_in_1)
 
 
-# ------------------------------------------------------------------------------
+# *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 # Since motivation has no effect, drop that variable and re-fit the model
 mod_err_in <- lm(data = errors_in,
                  error_rate_p_conditon ~ group*SC_centred + group*MAE_centred)

@@ -4,6 +4,7 @@
 # --- script version: Jun 2020
 # --- content: analysis of behavioural correct reactions
 
+
 # --- 1) load workflow functions and necessary packages ------------------------
 # workflow functions
 source('./r_functions/getPacks.R')
@@ -14,12 +15,13 @@ source('./r_functions/dataSummary.R')
 # load packages
 getPacks(c('tidyr', 'dplyr', 'ggplot2', 'viridis'))
 
+
 # --- 2) Import data -----------------------------------------------------------
 corrects <- read.table('../data/behavioral/behavioral_data.txt',
                        header = T)
 
-################################################################################
-# 3) Descriptives --------------------------------------------------------------
+
+# --- 3) Descriptives ----------------------------------------------------------
 # Plot dirtribution of correct reaction time
 corr_box <- ggplot(corrects,
                    aes(x = flankers, y = mean_correct_rt, color = flankers)) +
@@ -67,8 +69,8 @@ ggsave(corr_box,
        filename = './results/figures/Fig_3a.pdf',
        device = 'pdf',  width = 4, height = 5)
 
-################################################################################
-# 4) Statistical analysis ------------------------------------------------------
+
+# --- 4) Statistical analysis --------------------------------------------------
 # load Packages
 getPacks(c('lme4', 'lmerTest', 'sjPlot', 'car', 'MuMIn'))
 
@@ -116,7 +118,7 @@ tab_model(mod_full_1,
           title = 'Full model of correct RT.')
 
 
-# ------------------------------------------------------------------------------
+# *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 # *** Set up and fit reported models ***
 # load Packages
 getPacks(c('lme4', 'lmerTest', 'sjPlot', 'car', 'MuMIn', 'emmeans'))
@@ -190,7 +192,7 @@ as.data.frame(corrects %>% dplyr::group_by(flankers) %>%
                                  Min = min(mean_correct_rt), Max = max(mean_correct_rt)))
 
 
-# ------------------------------------------------------------------------------
+# *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
 # follow analyses and pairwise contrasts for correct RT model
 group_corr <- emmeans(mod_corrects_1, pairwise ~ flankers,
                      adjust = 'bonferroni', lmer.df = 'satterthwaite')
