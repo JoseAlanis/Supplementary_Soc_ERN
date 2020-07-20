@@ -1,7 +1,16 @@
-
+# macOS
 .DS_Store
+
+# R
 .Rhistory
+
+# PyCharm
+.idea/
+
+# private dirs
 /results/
 /r_scripts/00_snippeds.R
 
-.idea/
+# Zotero
+/Alanis_2018_Social_ERN/
+
